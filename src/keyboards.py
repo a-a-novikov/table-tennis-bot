@@ -66,7 +66,7 @@ def get_personal_game_kb(now_in_tourney: bool = False) -> types.ReplyKeyboardMar
 
 def get_couple_tourney_cancel_kb() -> types.InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text="Отменить турнир ⛔️", callback_data="cancel_tourney")
+    builder.button(text="Отменить дуэль ⛔️", callback_data="cancel_tourney")
     return builder.as_markup()
 
 

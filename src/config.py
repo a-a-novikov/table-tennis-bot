@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     BOT_TOKEN: str
     POSTGRES_DSN: str
     LOGGING_LEVEL: int = 1
+    ADMIN_CHAT_IDS: list[int] = []
 
     class Config:
         case_sensitive = True

@@ -3,7 +3,7 @@ from aiogram.enums import ParseMode
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import texts
-from helpers import get_pretty_name_from_chat, get_pretty_name_from_user_dto
+from helpers import get_pretty_name_from_chat, get_pretty_name_from_user_dto, int_to_emoji_int
 from keyboards import get_users_available_for_tourney_kb, get_tourney_length_kb, \
     get_personal_game_kb, get_tourney_game_result_kb, get_tourney_acceptance_kb, \
     TourneyAcceptanceChoice, get_couple_tourney_cancel_kb
@@ -131,29 +131,47 @@ async def process_tourney_game_result_handler(callback: types.CallbackQuery, ses
         chat_id=chat_id,
         message_id=callback.message.message_id,
     )
-    await callback.message.answer(texts.TOURNEY_GAME_RESULT_RECORDED)
-    if tourney.wins_total in (tourney.initiator_wins, tourney.acceptor_wins):
-        user_manager = UserManager(session)
-        if tourney.initiator_wins == tourney.wins_total:
-            winner_id, looser_id = tourney.initiator_id, tourney.acceptor_id
-            looser_wins = tourney.acceptor_wins
-        else:
-            winner_id, looser_id = tourney.acceptor_id, tourney.initiator_id
-            looser_wins = tourney.initiator_wins
-        await tourney_manager.finish_tourney(winner_id)
-        winner = await user_manager.get_user_enriched(winner_id, callback.bot)
-        looser = await user_manager.get_user_enriched(looser_id, callback.bot)
-        for user_id in (tourney.initiator_id, tourney.acceptor_id):
+
+    user_manager = UserManager(session)
+    if tourney.initiator_wins == tourney.wins_total:
+        winner_id, looser_id = tourney.initiator_id, tourney.acceptor_id
+        winner_wins = tourney.initiator_wins
+        looser_wins = tourney.acceptor_wins
+    else:
+        winner_id, looser_id = tourney.acceptor_id, tourney.initiator_id
+        winner_wins = tourney.acceptor_wins
+        looser_wins = tourney.initiator_wins
+    await tourney_manager.finish_tourney(winner_id)
+    winner = await user_manager.get_user_enriched(winner_id, callback.bot)
+    looser = await user_manager.get_user_enriched(looser_id, callback.bot)
+
+    for user_id in (tourney.initiator_id, tourney.acceptor_id):
+        winner_pretty_name = get_pretty_name_from_user_dto(winner)
+        looser_pretty_name = get_pretty_name_from_user_dto(looser)
+        # дуэль завершена
+        if tourney.wins_total in (tourney.initiator_wins, tourney.acceptor_wins):
             await callback.bot.send_message(
                 chat_id=user_id,
                 text=texts.TOURNEY_FINISHED.format(
-                    winner=get_pretty_name_from_user_dto(winner),
+                    winner=winner_pretty_name,
                     winner_wins=tourney.wins_total,
-                    loser=get_pretty_name_from_user_dto(looser),
+                    loser=looser_pretty_name,
                     looser_wins=looser_wins,
                 ),
                 parse_mode=ParseMode.HTML,
                 reply_markup=get_personal_game_kb(),
+            )
+        # дуэль еще продолжается
+        else:
+            await callback.bot.send_message(
+                chat_id=user_id,
+                text=texts.TOURNEY_GAME_RESULT_RECORDED.format(
+                    player1_wins=int_to_emoji_int(winner_wins),
+                    player1=winner_pretty_name,
+                    player2_wins=int_to_emoji_int(looser_wins),
+                    player2=looser_pretty_name,
+                ),
+                parse_mode=ParseMode.HTML,
             )
 
 

@@ -1,4 +1,5 @@
-from constants import MONTHS, INT_TO_COOL_INT
+from constants import MONTHS
+from helpers import int_to_emoji_int
 
 WELCOME_TEXT = ("Бот настольного тенниса приветствует Вас!\n"
                 "Участвуйте в after-daily играх и организуйте собственные дуэли!")
@@ -13,7 +14,7 @@ REGISTRATION_DECLINED = ("Сбор заявок на after-daily теннис ({
                          "\n"
                          "😔Вы пропускаете 😔")
 
-MARK_GAME_RESULT = "Каков результат Вашей сегодняшней игры?"
+MARK_GAME_RESULT = "Как прошла after-daily партия?"
 
 WON_RESULT_MARKED = ("Поздравляем с победой! Сегодня Вы - машина 🚘\n"
                      "*результат записан*")
@@ -52,7 +53,12 @@ ALREADY_IN_ACTIVE_TOURNEY = "Ошибка при регистрации дуэл
 
 TOURNEY_GAME_RESULT_SELECTION = "Кто вытащил катку?"
 
-TOURNEY_GAME_RESULT_RECORDED = "Результат игры записан."
+TOURNEY_GAME_RESULT_RECORDED = ("<b>Записан результат дуэльной партии!</b>\n"
+                                "\n"
+                                "Положение дел таково:\n"
+                                "{player1_wins} {player1}\n"
+                                "🆚\n"
+                                "{player2_wins} {player2}")
 
 
 TOURNEY_FINISHED = ("🎊Дуэль завершена🎊\n"
@@ -69,6 +75,11 @@ PERSONAL_STATISTICS = ("📊<b>Ваша статистика:</b>\n"
                       "After-daily партий выиграно (всего партий): {daily_wins} ({daily_total})\n"
                       "Дуэльных партий выиграно (всего партий): {couple_tourney_games_won} ({couple_tourney_games_total})\n"
                       "Дуэлей выиграно (всего дуэлей): {couple_tourney_won} ({couple_tourney_total})")
+
+
+PATCH_NOTE = ("Обновление бота v{version}🔥\n"
+              "\n"
+              "{content}")
 
 
 def get_current_tourney_info(
@@ -90,9 +101,9 @@ def get_current_tourney_info(
         day=day,
         month=MONTHS[month],
         initiator=initiator_name,
-        initiator_wins=INT_TO_COOL_INT[initiator_wins],
+        initiator_wins=int_to_emoji_int(initiator_wins),
         acceptor=acceptor_name,
-        acceptor_wins=INT_TO_COOL_INT[acceptor_wins],
+        acceptor_wins=int_to_emoji_int(acceptor_wins),
     )
 
 

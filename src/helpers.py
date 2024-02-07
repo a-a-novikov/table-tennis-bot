@@ -1,5 +1,6 @@
 from aiogram import types
 
+from constants import INT_TO_COOL_INT
 from dto import EnrichedUserDTO
 
 
@@ -21,3 +22,10 @@ def get_pretty_name_from_user_dto(user_dto: EnrichedUserDTO) -> str:
     elif user_dto.last_name:
         return f"«{user_dto.username}» {user_dto.last_name}"
     return f"«{user_dto.username}»"
+
+
+def int_to_emoji_int(string_of_ints: int) -> str:
+    result_str = ""
+    for int_ in str(string_of_ints):
+        result_str += INT_TO_COOL_INT[int(int_)]
+    return result_str

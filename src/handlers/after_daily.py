@@ -105,9 +105,8 @@ async def send_paired_players_list(bot):
             p1_chat = await bot.get_chat(pair_bookings[0].user_id)
             p2_chat = await bot.get_chat(pair_bookings[1].user_id)
             paired_usernames.append([get_pretty_name_from_chat(p1_chat), get_pretty_name_from_chat(p2_chat)])
-        except TelegramBadRequest:
-            print("bad request error")
-
+        except TelegramBadRequest as e:
+            print(e)
     # При нечетном кол-ве броней, составляет слушчайную пару с оставшимся в соло игроком
     if unpaired:
         try:
@@ -115,8 +114,8 @@ async def send_paired_players_list(bot):
             bookings.remove(unpaired)
             p2_chat = await bot.get_chat(random.choice(bookings).user_id)
             paired_usernames.append([get_pretty_name_from_chat(p1_chat), get_pretty_name_from_chat(p2_chat)])
-        except TelegramBadRequest:
-            print("bad request erro")
+        except TelegramBadRequest as e:
+            print(e)
 
     # Отправляет список пар всем подписчикам бота
     for booking in bookings:
@@ -126,8 +125,8 @@ async def send_paired_players_list(bot):
                 text=texts.format_pairs_list(paired_usernames),
                 parse_mode=ParseMode.HTML,
             )
-        except TelegramBadRequest:
-            print("bad request err")
+        except TelegramBadRequest as e:
+            print(e)
 
 
 async def send_save_game_result_messages(bot):

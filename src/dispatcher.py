@@ -9,7 +9,7 @@ from redis.asyncio.client import Redis
 
 from config import settings
 
-from handlers import start, after_daily, test, couple_tourney
+from handlers import start, after_daily, announce, couple_tourney
 
 
 def get_redis_storage(
@@ -41,7 +41,7 @@ def get_dispatcher(
 
     dp.include_router(after_daily.router)
     dp.include_router(couple_tourney.router)
-    dp.include_router(test.router)
+    dp.include_router(announce.router)
     dp.include_router(start.router)
 
     # Register middlewares
