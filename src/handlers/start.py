@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import texts
 from handlers.after_daily import send_invitation
+from helpers import int_to_emoji_int
 from keyboards import get_personal_game_kb
 from middlewares import DBSessionMiddleware
 from services.after_daily_booking_manager import AfterDailyBookingManager
@@ -45,12 +46,12 @@ async def init_tourney_handler(message: types.Message, session: AsyncSession):
             chat_id=chat_id,
             text=texts.PERSONAL_STATISTICS.format(
                 last_daily_game_date=user_stats.last_daily_game_date.isoformat() if user_stats.last_daily_game_date else "нет данных",
-                daily_wins=user_stats.daily_wins,
-                daily_total=user_stats.daily_total,
-                couple_tourney_games_won=user_stats.couple_tourney_games_won,
-                couple_tourney_games_total=user_stats.couple_tourney_games_total,
-                couple_tourney_won=user_stats.couple_tourney_won,
-                couple_tourney_total=user_stats.couple_tourney_total,
+                daily_wins=int_to_emoji_int(user_stats.daily_wins),
+                daily_total=int_to_emoji_int(user_stats.daily_total),
+                couple_tourney_games_won=int_to_emoji_int(user_stats.couple_tourney_games_won),
+                couple_tourney_games_total=int_to_emoji_int(user_stats.couple_tourney_games_total),
+                couple_tourney_won=int_to_emoji_int(user_stats.couple_tourney_won),
+                couple_tourney_total=int_to_emoji_int(user_stats.couple_tourney_total),
             ),
             parse_mode=ParseMode.HTML,
         )

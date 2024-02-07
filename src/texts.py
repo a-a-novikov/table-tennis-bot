@@ -70,11 +70,11 @@ TOURNEY_FINISHED = ("🎊Дуэль завершена🎊\n"
 
 PERSONAL_STATISTICS = ("📊<b>Ваша статистика:</b>\n"
                       "\n"
-                      "Дата последней after-daily партии: {last_daily_game_date}\n"
+                      "Последняя after-daily партия: {last_daily_game_date}\n"
                       #Самый длинный стрик"
-                      "After-daily партий выиграно (всего партий): {daily_wins} ({daily_total})\n"
-                      "Дуэльных партий выиграно (всего партий): {couple_tourney_games_won} ({couple_tourney_games_total})\n"
-                      "Дуэлей выиграно (всего дуэлей): {couple_tourney_won} ({couple_tourney_total})")
+                      "After-daily партий выиграно: {daily_wins} из {daily_total}\n"
+                      "Дуэлей выиграно: {couple_tourney_won} из {couple_tourney_total}\n"
+                      "Дуэльных партий выиграно: {couple_tourney_games_won} из {couple_tourney_games_total}")
 
 
 PATCH_NOTE = ("Обновление бота v{version}🔥\n"
