@@ -155,7 +155,7 @@ async def process_result_survey_handler(callback: types.CallbackQuery, session: 
         await AfterDailyBookingManager(session).update_booking(
             chat_id=chat_id,
             date=date.today(),
-            win=True if GameResultChoice.WIN else False,
+            win=game_result == GameResultChoice.WIN,
         )
     await callback.bot.delete_message(
         chat_id=chat_id,
