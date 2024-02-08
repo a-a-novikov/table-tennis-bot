@@ -81,6 +81,10 @@ PATCH_NOTE = ("Обновление бота v{version}🔥\n"
               "\n"
               "{content}")
 
+ANNOUNCE = ("Объявление от команды разработчиков🚨\n"
+              "\n"
+              "{content}")
+
 
 def get_current_tourney_info(
     wins_total: int,
