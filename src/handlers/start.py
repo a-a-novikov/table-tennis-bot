@@ -1,3 +1,6 @@
+import datetime
+
+import pytz
 from aiogram import Router, types, F
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
@@ -5,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import texts
 from handlers.after_daily import send_invitation
-from helpers import int_to_emoji_int
+from helpers import int_to_emoji_int, today_is_holiday
 from keyboards import get_personal_game_kb
 from middlewares import DBSessionMiddleware
 from services.after_daily_booking_manager import AfterDailyBookingManager
@@ -33,7 +36,8 @@ async def cmd_start(message: types.Message, session: AsyncSession):
         chat_id=message.chat.id,
         reply_markup=get_personal_game_kb(now_in_tourney=True if now_in_tourney else False),
     )
-    if not booking_exists:
+    novosibirsk_dt_now = datetime.datetime.now(tz=pytz.timezone("Asia/Novosibirsk"))
+    if not booking_exists and not today_is_holiday() and novosibirsk_dt_now.time() < datetime.time(hour=14, minute=30):
         await send_invitation(message.bot, chat_id)
 
 

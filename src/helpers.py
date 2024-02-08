@@ -1,3 +1,5 @@
+from datetime import date
+
 from aiogram import types
 
 from constants import INT_TO_COOL_INT
@@ -29,3 +31,8 @@ def int_to_emoji_int(string_of_ints: int) -> str:
     for int_ in str(string_of_ints):
         result_str += INT_TO_COOL_INT[int(int_)]
     return result_str
+
+
+def today_is_holiday() -> bool:
+    if date.today().weekday() > 4:
+        return True
