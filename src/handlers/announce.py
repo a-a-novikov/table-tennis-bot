@@ -6,6 +6,7 @@ import texts
 from config import settings
 from keyboards import get_personal_game_kb
 from middlewares import DBSessionMiddleware
+from services.couple_tourney_manager import CoupleTourneyManager
 from services.user_manager import UserManager
 
 router = Router(name='announce')
@@ -32,9 +33,10 @@ async def release_announce_handler(message: types.Message, session: AsyncSession
 
     users = await UserManager(session).get_all_users()
     for u in users:
+        now_in_tourney = await CoupleTourneyManager(session).get_active_tourney(u.chat_id)
         await message.bot.send_message(
             chat_id=u.chat_id,
             text=texts.PATCH_NOTE.format(version=version, content=content),
-            reply_markup=get_personal_game_kb(),
+            reply_markup=get_personal_game_kb(now_in_tourney=True if now_in_tourney else False),
             parse_mode=ParseMode.HTML,
         )
