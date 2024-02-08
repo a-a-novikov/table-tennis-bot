@@ -103,7 +103,10 @@ async def accept_or_decline_tourney_handler(callback: types.CallbackQuery, sessi
         text = texts.TOURNEY_ACCEPTED
     else:
         await tourney_manager.decline_tourney(chat_id)
-        text = texts.TOURNEY_DECLINED
+        text = texts.TOURNEY_DECLINED.format(
+            initiator=get_pretty_name_from_user_dto(initiator),
+            acceptor=get_pretty_name_from_user_dto(acceptor),
+        )
 
     await callback.bot.delete_message(
         chat_id=chat_id,
