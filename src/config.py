@@ -18,12 +18,13 @@ class Settings(BaseSettings):
     REDIS_STATE_TTL: int
     BOT_TOKEN: str
     POSTGRES_DSN: str
+    DEBUG: bool = False
     LOGGING_LEVEL: int = 1
     ADMIN_CHAT_IDS: list[int] = []
 
     class Config:
         case_sensitive = True
-        env_file = ".test.env"
+        env_file = ".env"
 
 
 settings = Settings()
