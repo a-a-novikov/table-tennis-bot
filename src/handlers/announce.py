@@ -15,12 +15,12 @@ router.message.middleware(DBSessionMiddleware())
 router.callback_query.middleware(DBSessionMiddleware())
 
 
-@router.message(lambda t: "release_announce" in t.text)
+@router.message(lambda t: "--release--" in t.text)
 async def release_announce_handler(message: types.Message, session: AsyncSession):
     """
     Анонс релиза доступен админу. Для анонса нужно с админского профиля отправить сообщение
     вида:
-    release_announce
+    --release--
     1.2.3
     - New feature A
     - <b>NEW EXTRA COOL FEATURE B</b>
@@ -42,12 +42,12 @@ async def release_announce_handler(message: types.Message, session: AsyncSession
         )
 
 
-@router.message(lambda t: "announce" in t.text)
+@router.message(lambda t: "--announce--" in t.text)
 async def release_announce_handler(message: types.Message, session: AsyncSession):
     """
     Анонс информации доступен админу. Для анонса нужно с админского профиля отправить сообщение
     вида:
-    announce
+    --announce--
     Третьего дня купил себе фикус. Держу в курсе!
     """
     if message.chat.id not in settings.ADMIN_CHAT_IDS:
