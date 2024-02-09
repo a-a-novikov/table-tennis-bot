@@ -140,11 +140,17 @@ async def process_tourney_game_result_handler(callback: types.CallbackQuery, ses
         winner_id, looser_id = tourney.initiator_id, tourney.acceptor_id
         winner_wins = tourney.initiator_wins
         looser_wins = tourney.acceptor_wins
-    else:
+        await tourney_manager.finish_tourney(winner_id)
+    elif tourney.acceptor_wins == tourney.wins_total:
         winner_id, looser_id = tourney.acceptor_id, tourney.initiator_id
         winner_wins = tourney.acceptor_wins
         looser_wins = tourney.initiator_wins
-    await tourney_manager.finish_tourney(winner_id)
+        await tourney_manager.finish_tourney(winner_id)
+    else:
+        winner_id = tourney.initiator_id if tourney.initiator_id == winner_id else tourney.acceptor_id
+        looser_id = tourney.acceptor_id if tourney.acceptor_id == winner_id else tourney.initiator_id
+        winner_wins = tourney.initiator_wins if tourney.initiator_id == winner_id else tourney.acceptor_wins
+        looser_wins = tourney.acceptor_wins if tourney.acceptor_id == winner_id else tourney.initiator_wins
     winner = await user_manager.get_user_enriched(winner_id, callback.bot)
     looser = await user_manager.get_user_enriched(looser_id, callback.bot)
 
