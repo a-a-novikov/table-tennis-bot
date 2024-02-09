@@ -1,5 +1,5 @@
 import asyncio
-import asyncio
+import pytz
 import logging
 
 from aiogram import Bot
@@ -13,7 +13,7 @@ from handlers.after_daily import send_daily_invitation, send_paired_players_list
 
 
 async def setup_periodic_tasks(bot):
-    scheduler = AsyncIOScheduler()
+    scheduler = AsyncIOScheduler(timezone=pytz.timezone("Asia/Novosibirsk"))
     scheduler.add_job(send_paired_players_list, "cron", hour=14, minute=35, args=(bot,))
     scheduler.add_job(send_daily_invitation, "cron", hour=13, minute=50, args=(bot,))
     scheduler.add_job(send_save_game_result_messages, "cron", hour=15, minute=15, args=(bot,))
