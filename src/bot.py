@@ -29,6 +29,7 @@ async def start_bot():
             password=settings.REDIS_PASSWORD,
             username=settings.REDIS_USERNAME,
             port=settings.REDIS_PORT,
+            decode_responses=True,
         )
     )
     dp = get_dispatcher(storage=storage)
