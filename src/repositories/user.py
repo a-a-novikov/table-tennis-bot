@@ -44,7 +44,10 @@ class UserRepository(BaseRepository):
                     func.coalesce(func.sum(CoupleTourney.initiator_wins.distinct()).filter(CoupleTourney.initiator_id == chat_id), 0) +
                     func.coalesce(func.sum(CoupleTourney.acceptor_wins.distinct()).filter(CoupleTourney.acceptor_id == chat_id), 0)
                 ).label("couple_tourney_games_won"),
-                func.coalesce(func.sum(CoupleTourney.games_played.distinct()), 0).label("couple_tourney_games_total"),
+                (
+                        func.coalesce(func.sum(CoupleTourney.games_played.distinct()).filter(CoupleTourney.initiator_id == chat_id), 0) +
+                        func.coalesce(func.sum(CoupleTourney.games_played.distinct()).filter(CoupleTourney.acceptor_id == chat_id,), 0)
+                ).label("couple_tourney_games_total"),
                 (
                     func.coalesce(func.count(CoupleTourney.registered_at.distinct()).filter(CoupleTourney.initiator_id == chat_id, CoupleTourney.initiator_wins == CoupleTourney.wins_total), 0) +
                     func.coalesce(func.count(CoupleTourney.registered_at.distinct()).filter(CoupleTourney.acceptor_id == chat_id, CoupleTourney.acceptor_wins == CoupleTourney.wins_total), 0)
