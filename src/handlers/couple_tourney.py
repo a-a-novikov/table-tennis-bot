@@ -3,7 +3,7 @@ from aiogram.enums import ParseMode
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import texts
-from helpers import get_pretty_name_from_chat, get_pretty_name_from_user_dto, int_to_emoji_int
+from helpers import get_pretty_name_from_chat, get_pretty_name_from_user_dto, parse_int_to_emoji_int
 from keyboards import get_users_available_for_tourney_kb, get_tourney_length_kb, \
     get_personal_game_kb, get_tourney_game_result_kb, get_tourney_acceptance_kb, \
     TourneyAcceptanceChoice, get_couple_tourney_cancel_kb
@@ -175,9 +175,9 @@ async def process_tourney_game_result_handler(callback: types.CallbackQuery, ses
             await callback.bot.send_message(
                 chat_id=user_id,
                 text=texts.TOURNEY_GAME_RESULT_RECORDED.format(
-                    player1_wins=int_to_emoji_int(winner_wins),
+                    player1_wins=parse_int_to_emoji_int(winner_wins),
                     player1=winner_pretty_name,
-                    player2_wins=int_to_emoji_int(looser_wins),
+                    player2_wins=parse_int_to_emoji_int(looser_wins),
                     player2=looser_pretty_name,
                 ),
                 parse_mode=ParseMode.HTML,

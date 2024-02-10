@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import texts
 from constants import MONTHS
 from db.base import DBSessionFactory
-from helpers import get_pretty_name_from_chat, today_is_holiday
+from helpers import get_pretty_name_from_chat, check_if_today_is_holiday
 from keyboards import registration_kb, RegistrationChoice, reset_registration_kb, game_result_kb, \
     GameResultChoice
 from middlewares import DBSessionMiddleware
@@ -33,7 +33,7 @@ async def send_invitation(bot, chat_id):
 
 
 async def send_daily_invitation(bot):
-    if today_is_holiday():
+    if check_if_today_is_holiday():
         return
     async with DBSessionFactory() as session:
         users = await UserManager(session).get_all_users()
@@ -78,7 +78,7 @@ async def process_registration_handler(callback: types.CallbackQuery, session: A
 
 
 async def send_paired_players_list(bot):
-    if today_is_holiday():
+    if check_if_today_is_holiday():
         return
     async with DBSessionFactory() as session:
         bookings = await AfterDailyBookingManager(session).get_all_bookings_for_date()

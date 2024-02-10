@@ -26,13 +26,13 @@ def get_pretty_name_from_user_dto(user_dto: EnrichedUserDTO) -> str:
     return f"«{user_dto.username}»"
 
 
-def int_to_emoji_int(string_of_ints: int) -> str:
+def parse_int_to_emoji_int(string_of_ints: int) -> str:
     result_str = ""
     for int_ in str(string_of_ints):
         result_str += INT_TO_COOL_INT[int(int_)]
     return result_str
 
 
-def today_is_holiday() -> bool:
+def check_if_today_is_holiday() -> bool:
     if date.today().weekday() > 4:
         return True

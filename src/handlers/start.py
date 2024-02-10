@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import texts
 from handlers.after_daily import send_invitation
-from helpers import int_to_emoji_int, today_is_holiday
+from helpers import parse_int_to_emoji_int, check_if_today_is_holiday
 from keyboards import get_personal_game_kb
 from middlewares import DBSessionMiddleware
 from services.after_daily_booking_manager import AfterDailyBookingManager
@@ -37,7 +37,7 @@ async def cmd_start(message: types.Message, session: AsyncSession):
         reply_markup=get_personal_game_kb(now_in_tourney=True if now_in_tourney else False),
     )
     novosibirsk_dt_now = datetime.datetime.now(tz=pytz.timezone("Asia/Novosibirsk"))
-    if not booking_exists and not today_is_holiday() and novosibirsk_dt_now.time() < datetime.time(hour=14, minute=30):
+    if not booking_exists and not check_if_today_is_holiday() and novosibirsk_dt_now.time() < datetime.time(hour=14, minute=30):
         await send_invitation(message.bot, chat_id)
 
 
@@ -50,12 +50,12 @@ async def init_tourney_handler(message: types.Message, session: AsyncSession):
             chat_id=chat_id,
             text=texts.PERSONAL_STATISTICS.format(
                 last_daily_game_date=user_stats.last_daily_game_date.isoformat() if user_stats.last_daily_game_date else "нет данных",
-                daily_wins=int_to_emoji_int(user_stats.daily_wins),
-                daily_total=int_to_emoji_int(user_stats.daily_total),
-                couple_tourney_games_won=int_to_emoji_int(user_stats.couple_tourney_games_won),
-                couple_tourney_games_total=int_to_emoji_int(user_stats.couple_tourney_games_total),
-                couple_tourney_won=int_to_emoji_int(user_stats.couple_tourney_won),
-                couple_tourney_total=int_to_emoji_int(user_stats.couple_tourney_total),
+                daily_wins=parse_int_to_emoji_int(user_stats.daily_wins),
+                daily_total=parse_int_to_emoji_int(user_stats.daily_total),
+                couple_tourney_games_won=parse_int_to_emoji_int(user_stats.couple_tourney_games_won),
+                couple_tourney_games_total=parse_int_to_emoji_int(user_stats.couple_tourney_games_total),
+                couple_tourney_won=parse_int_to_emoji_int(user_stats.couple_tourney_won),
+                couple_tourney_total=parse_int_to_emoji_int(user_stats.couple_tourney_total),
             ),
             parse_mode=ParseMode.HTML,
         )

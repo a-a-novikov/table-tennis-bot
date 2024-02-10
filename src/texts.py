@@ -1,5 +1,5 @@
 from constants import MONTHS
-from helpers import int_to_emoji_int
+from helpers import parse_int_to_emoji_int
 
 WELCOME_TEXT = ("Бот настольного тенниса приветствует Вас!\n"
                 "Участвуйте в after-daily играх и организуйте собственные дуэли!")
@@ -105,9 +105,9 @@ def get_current_tourney_info(
         day=day,
         month=MONTHS[month],
         initiator=initiator_name,
-        initiator_wins=int_to_emoji_int(initiator_wins),
+        initiator_wins=parse_int_to_emoji_int(initiator_wins),
         acceptor=acceptor_name,
-        acceptor_wins=int_to_emoji_int(acceptor_wins),
+        acceptor_wins=parse_int_to_emoji_int(acceptor_wins),
     )
 
 
