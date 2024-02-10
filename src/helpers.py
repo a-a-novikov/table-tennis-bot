@@ -2,7 +2,7 @@ from datetime import date
 
 from aiogram import types
 
-from constants import INT_TO_COOL_INT
+from constants import EMOJI_BY_INT
 from dto import EnrichedUserDTO
 
 
@@ -29,7 +29,7 @@ def get_pretty_name_from_user_dto(user_dto: EnrichedUserDTO) -> str:
 def parse_int_to_emoji_int(string_of_ints: int) -> str:
     result_str = ""
     for int_ in str(string_of_ints):
-        result_str += INT_TO_COOL_INT[int(int_)]
+        result_str += EMOJI_BY_INT[int(int_)]
     return result_str
 
 
