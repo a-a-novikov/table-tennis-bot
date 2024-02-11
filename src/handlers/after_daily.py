@@ -130,6 +130,8 @@ async def send_paired_players_list(bot):
 
 
 async def send_save_game_result_messages(bot):
+    if check_if_today_is_holiday():
+        return
     async with DBSessionFactory() as session:
         bookings = await AfterDailyBookingManager(session).get_all_bookings_for_date()
     for booking in bookings:
