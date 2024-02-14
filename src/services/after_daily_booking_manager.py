@@ -33,6 +33,8 @@ class AfterDailyBookingManager:
 
     async def update_booking(self, chat_id: int, date: datetime.date, win: bool) -> None:
         booking = await self.repository.retrieve_booking(chat_id, date)
+        if not booking:
+            return None
         booking_dto = AfterDailyBookingDTO.from_db(booking)
         booking_dto.win = win
         await self.repository.update_booking(chat_id, date, win)
