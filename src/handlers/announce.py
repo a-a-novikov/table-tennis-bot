@@ -16,7 +16,7 @@ router.callback_query.middleware(DBSessionMiddleware())
 
 
 @router.message(lambda t: "--release--" in t.text)
-async def release_announce_handler(message: types.Message, session: AsyncSession):
+async def release_handler(message: types.Message, session: AsyncSession):
     """
     Анонс релиза доступен админу. Для анонса нужно с админского профиля отправить сообщение
     вида:
@@ -43,7 +43,7 @@ async def release_announce_handler(message: types.Message, session: AsyncSession
 
 
 @router.message(lambda t: "--announce--" in t.text)
-async def release_announce_handler(message: types.Message, session: AsyncSession):
+async def announce_handler(message: types.Message, session: AsyncSession):
     """
     Анонс информации доступен админу. Для анонса нужно с админского профиля отправить сообщение
     вида:

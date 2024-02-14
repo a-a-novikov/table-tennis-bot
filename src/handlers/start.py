@@ -42,7 +42,7 @@ async def cmd_start(message: types.Message, session: AsyncSession):
 
 
 @router.message(F.text == "Посмореть личную статистику")
-async def init_tourney_handler(message: types.Message, session: AsyncSession):
+async def personal_stats_handler(message: types.Message, session: AsyncSession):
     chat_id = message.chat.id
     user_stats = await UserManager(session).get_user_statistics(chat_id)
     if user_stats:

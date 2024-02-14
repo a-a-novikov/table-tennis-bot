@@ -45,7 +45,7 @@ async def send_daily_invitation(bot):
 
 
 @router.callback_query(F.data == RegistrationChoice.IDLE.value)
-async def reset_registration_handler(callback: types.CallbackQuery, session: AsyncSession):
+async def registration_canceled_handler(callback: types.CallbackQuery, session: AsyncSession):
     chat_id = callback.message.chat.id
     await AfterDailyBookingManager(session).remove_booking(chat_id)
     today_date = f"{date.today().day} {MONTHS[date.today().month]}"
@@ -59,7 +59,7 @@ async def reset_registration_handler(callback: types.CallbackQuery, session: Asy
 
 @router.callback_query(lambda c: c.data == RegistrationChoice.IN_GAME.value)
 @router.callback_query(lambda c: c.data == RegistrationChoice.PASS.value)
-async def process_registration_handler(callback: types.CallbackQuery, session: AsyncSession):
+async def registration_survey_handler(callback: types.CallbackQuery, session: AsyncSession):
     after_daily_booking_manager = AfterDailyBookingManager(session)
     request_status = RegistrationChoice[callback.data]
     chat_id = callback.message.chat.id
@@ -145,7 +145,7 @@ async def send_save_game_result_messages(bot):
 @router.callback_query(lambda c: c.data == GameResultChoice.WIN.value)
 @router.callback_query(lambda c: c.data == GameResultChoice.LOOSE.value)
 @router.callback_query(lambda c: c.data == GameResultChoice.SKIPPED.value)
-async def process_result_survey_handler(callback: types.CallbackQuery, session: AsyncSession):
+async def result_survey_handler(callback: types.CallbackQuery, session: AsyncSession):
     chat_id = callback.message.chat.id
     game_result = GameResultChoice[callback.data]
     result_to_reply_text = {

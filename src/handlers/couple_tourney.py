@@ -18,7 +18,7 @@ router.callback_query.middleware(DBSessionMiddleware())
 
 
 @router.message(F.text == "Организовать дуэль")
-async def init_tourney_handler(message: types.Message, session: AsyncSession):
+async def new_tourney_request_handler(message: types.Message, session: AsyncSession):
     chat_id = message.chat.id
     users = await UserManager(session).get_all_users_enriched(message.bot)
     users_available_for_tourney = await CoupleTourneyManager(session).get_users_available_for_tourney(users, chat_id)
@@ -29,7 +29,7 @@ async def init_tourney_handler(message: types.Message, session: AsyncSession):
 
 
 @router.message(F.text == "Инфа по текущей дуэли")
-async def init_tourney_handler(message: types.Message, session: AsyncSession):
+async def tourney_info_handler(message: types.Message, session: AsyncSession):
     tourney = await CoupleTourneyManager(session).get_active_tourney(message.chat.id)
 
     user_manager = UserManager(session)
@@ -51,7 +51,7 @@ async def init_tourney_handler(message: types.Message, session: AsyncSession):
 
 
 @router.callback_query(lambda c: c.data == "cancel_tourney")
-async def cancel_active_tourney_handler(callback: types.CallbackQuery, session: AsyncSession):
+async def cancel_tourney_request_handler(callback: types.CallbackQuery, session: AsyncSession):
     chat_id = callback.message.chat.id
     tourney_manager = CoupleTourneyManager(session)
 
@@ -76,7 +76,7 @@ async def cancel_active_tourney_handler(callback: types.CallbackQuery, session: 
 
 
 @router.message(F.text == "Записать дуэльную игру")
-async def init_tourney_handler(message: types.Message, session: AsyncSession):
+async def new_game_to_record_handler(message: types.Message, session: AsyncSession):
     tourney = await CoupleTourneyManager(session).get_active_tourney(message.chat.id)
 
     user_manager = UserManager(session)
