@@ -39,23 +39,3 @@ async def cmd_start(message: types.Message, session: AsyncSession):
     novosibirsk_dt_now = datetime.datetime.now(tz=pytz.timezone("Asia/Novosibirsk"))
     if not booking_exists and not check_if_today_is_holiday() and novosibirsk_dt_now.time() < datetime.time(hour=14, minute=30):
         await send_invitation(message.bot, chat_id)
-
-
-@router.message(F.text == "Посмореть личную статистику")
-async def personal_stats_handler(message: types.Message, session: AsyncSession):
-    chat_id = message.chat.id
-    user_stats = await UserManager(session).get_user_statistics(chat_id)
-    if user_stats:
-        await message.bot.send_message(
-            chat_id=chat_id,
-            text=texts.PERSONAL_STATISTICS.format(
-                last_daily_game_date=user_stats.last_daily_game_date.isoformat() if user_stats.last_daily_game_date else "нет данных",
-                daily_wins=parse_int_to_emoji_int(user_stats.daily_wins),
-                daily_total=parse_int_to_emoji_int(user_stats.daily_total),
-                couple_tourney_games_won=parse_int_to_emoji_int(user_stats.couple_tourney_games_won),
-                couple_tourney_games_total=parse_int_to_emoji_int(user_stats.couple_tourney_games_total),
-                couple_tourney_won=parse_int_to_emoji_int(user_stats.couple_tourney_won),
-                couple_tourney_total=parse_int_to_emoji_int(user_stats.couple_tourney_total),
-            ),
-            parse_mode=ParseMode.HTML,
-        )
