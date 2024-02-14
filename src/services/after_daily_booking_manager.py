@@ -11,7 +11,9 @@ class AfterDailyBookingManager:
     def __init__(self, session: AsyncSession):
         self.repository: AfterDailyBookingRepository = AfterDailyBookingRepository(session)
 
-    async def add_booking(self, chat_id: int, date: datetime.date = datetime.date.today()) -> AfterDailyBookingDTO:
+    async def add_booking(self, chat_id: int, date: datetime.date | None = None) -> AfterDailyBookingDTO:
+        if not date:
+            date = datetime.date.today()
         try:
             booking = await self.repository.create_booking(chat_id, date)
         except IntegrityError:

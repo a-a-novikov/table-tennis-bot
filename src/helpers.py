@@ -36,3 +36,4 @@ def parse_int_to_emoji_int(string_of_ints: int) -> str:
 def check_if_today_is_holiday() -> bool:
     if date.today().weekday() > 4:
         return True
+    return False
