@@ -123,6 +123,12 @@ def get_tourney_length_kb(acceptor_id: int) -> types.InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(
+            text=f"До двух",
+            callback_data=f"new-tourney_2_{acceptor_id}",
+        ),
+    )
+    builder.row(
+        InlineKeyboardButton(
             text=f"До трех",
             callback_data=f"new-tourney_3_{acceptor_id}",
         ),
@@ -131,12 +137,6 @@ def get_tourney_length_kb(acceptor_id: int) -> types.InlineKeyboardMarkup:
         InlineKeyboardButton(
             text=f"До четырех",
             callback_data=f"new-tourney_4_{acceptor_id}",
-        ),
-    )
-    builder.row(
-        InlineKeyboardButton(
-            text=f"До пяти",
-            callback_data=f"new-tourney_5_{acceptor_id}",
         ),
     )
     return builder.as_markup()
