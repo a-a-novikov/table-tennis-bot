@@ -84,10 +84,18 @@ async def send_paired_players_list(bot):
         bookings = await AfterDailyBookingManager(session).get_all_bookings_for_date()
     if not bookings:
         return
-    # Формирует пары ID игроков случайным образом
+
+    # Удаляет из броней тех людей, которые заблокировали бота
+    for booking in bookings:
+        try:
+            await bot.get_chat(booking.user_id)
+        except TelegramBadRequest:
+            bookings.remove(booking)
     bookings_set = set(bookings)
+
     paired_bookings = []
     unpaired = None
+    # Формирует пары ID игроков случайным образом
     while bookings_set:
         try:
             pair = random.sample(sorted(bookings_set), 2)
