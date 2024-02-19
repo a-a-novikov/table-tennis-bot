@@ -20,13 +20,17 @@ class AfterDailyBookingManager:
             booking = await self.repository.retrieve_booking(chat_id, date)
         return AfterDailyBookingDTO.from_db(booking)
 
-    async def get_booking(self, chat_id: int, date: datetime.date = datetime.date.today()) -> AfterDailyBookingDTO | None:
+    async def get_booking(self, chat_id: int, date: datetime.date | None = None) -> AfterDailyBookingDTO | None:
+        if not date:
+            date = datetime.date.today()
         booking = await self.repository.retrieve_booking(chat_id, date)
         if not booking:
             return None
         return AfterDailyBookingDTO.from_db(booking)
 
-    async def get_all_bookings_for_date(self, date: datetime.date = datetime.date.today()) -> list[AfterDailyBookingDTO]:
+    async def get_all_bookings_for_date(self, date: datetime.date | None = None) -> list[AfterDailyBookingDTO]:
+        if not date:
+            date = datetime.date.today()
         bookings = await self.repository.retrieve_all_bookings_for_day(date)
         return [
             AfterDailyBookingDTO(user_id=b.user_id, date=b.date, win=b.win)
@@ -41,5 +45,7 @@ class AfterDailyBookingManager:
         booking_dto.win = win
         await self.repository.update_booking(chat_id, date, win)
 
-    async def remove_booking(self, chat_id: int, date: datetime.date = datetime.date.today()) -> None:
+    async def remove_booking(self, chat_id: int, date: datetime.date | None = None) -> None:
+        if not date:
+            date = datetime.date.today()
         await self.repository.delete_booking(chat_id, date)
