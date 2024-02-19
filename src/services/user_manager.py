@@ -1,5 +1,3 @@
-import datetime
-
 from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest
 from sqlalchemy.exc import IntegrityError
@@ -37,11 +35,6 @@ class UserManager:
             username=user_chat.username,
             first_name=user_chat.first_name,
             last_name=user_chat.last_name,
-            longest_streak=user.longest_streak,
-            last_game_at=user.last_game_at,
-            skip_count=user.skip_count,
-            wins=user.wins,
-            looses=user.looses,
         )
 
     async def get_all_users(self) -> list[UserDTO]:
@@ -49,11 +42,6 @@ class UserManager:
         return [
             UserDTO(
                 chat_id=u.chat_id,
-                longest_streak=u.longest_streak,
-                last_game_at=u.last_game_at,
-                skip_count=u.skip_count,
-                wins=u.wins,
-                looses=u.looses,
         )
             for u in users
         ]
@@ -71,33 +59,9 @@ class UserManager:
                 username=user_chat.username,
                 first_name=user_chat.first_name,
                 last_name=user_chat.last_name,
-                longest_streak=user.longest_streak,
-                last_game_at=user.last_game_at,
-                skip_count=user.skip_count,
-                wins=user.wins,
-                looses=user.looses,
             )
             result.append(user_dto)
         return result
-
-    async def update_user_daily_streak(self, chat_id: int, played_today: bool) -> None:
-        user = await self.repository.retrieve_user(chat_id)
-        user_dto = UserDTO.from_db(user)
-        if played_today:
-            user_dto.longest_streak += 1
-            user_dto.last_game_at = datetime.date.today()
-        else:
-            user_dto.skip_count += 1
-        await self.repository.update_user(user_dto)
-
-    async def save_game_result(self, chat_id: int, won: bool) -> None:
-        user = await self.repository.retrieve_user(chat_id)
-        user_dto = UserDTO.from_db(user)
-        if won:
-            user_dto.wins += 1
-        else:
-            user_dto.looses += 1
-        await self.repository.update_user(user_dto)
 
     async def get_user_statistics(self, chat_id: int) -> UserStatisticsDTO | None:
         statistics = await self.repository.get_user_statistics(chat_id)

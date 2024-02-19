@@ -11,11 +11,6 @@ class User(Base):
     __tablename__ = "user"
 
     chat_id: Mapped[int] = mapped_column(primary_key=True)
-    longest_streak: Mapped[int] = mapped_column(default=0)  # TODO deprecated - считать через другие таблицы
-    last_game_at: Mapped[Optional[date]] = mapped_column(Date()) # TODO deprecated - считать через другие таблицы
-    skip_count: Mapped[int] = mapped_column(default=0) # TODO deprecated - считать через другие таблицы
-    wins: Mapped[int] = mapped_column(default=0)  # TODO deprecated - считать через другие таблицы
-    looses: Mapped[int] = mapped_column(default=0)  # TODO deprecated - считать через другие таблицы
 
     bookings: Mapped[list["AfterDailyBooking"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"

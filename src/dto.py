@@ -8,21 +8,11 @@ from db.models import User, AfterDailyBooking, CoupleTourney
 @dataclasses.dataclass
 class UserDTO:
     chat_id: int
-    longest_streak: int = dataclasses.field(default=0)
-    last_game_at: str | None = dataclasses.field(default=None)
-    skip_count: int = dataclasses.field(default=0)
-    wins: int = dataclasses.field(default=0)
-    looses: int = dataclasses.field(default=0)
 
     @classmethod
     def from_db(cls, instance: User) -> Self:
         return UserDTO(
             chat_id=instance.chat_id,
-            longest_streak=instance.longest_streak,
-            last_game_at=instance.last_game_at,
-            skip_count=instance.skip_count,
-            wins=instance.wins,
-            looses=instance.looses,
         )
 
 
@@ -32,22 +22,6 @@ class EnrichedUserDTO:
     username: str
     first_name: str | None
     last_name: str | None
-    longest_streak: int = dataclasses.field(default=0)
-    last_game_at: str | None = dataclasses.field(default=None)
-    skip_count: int = dataclasses.field(default=0)
-    wins: int = dataclasses.field(default=0)
-    looses: int = dataclasses.field(default=0)
-
-    @classmethod
-    def from_db(cls, instance: User) -> Self:
-        return UserDTO(
-            chat_id=instance.chat_id,
-            longest_streak=instance.longest_streak,
-            last_game_at=instance.last_game_at,
-            skip_count=instance.skip_count,
-            wins=instance.wins,
-            looses=instance.looses,
-        )
 
 
 @dataclasses.dataclass

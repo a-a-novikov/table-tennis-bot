@@ -2,7 +2,7 @@ from db.models import User, AfterDailyBooking, CoupleTourney
 from dto import UserDTO, UserStatisticsDTO
 
 from repositories.base import BaseRepository
-from sqlalchemy import select, or_, func, case
+from sqlalchemy import select, or_, func
 
 
 class UserRepository(BaseRepository):
@@ -23,15 +23,7 @@ class UserRepository(BaseRepository):
         return [User(**u) for u in users_query.mappings().all()]
 
     async def update_user(self, data: UserDTO) -> User:
-        user = await self.retrieve_user(chat_id=data.chat_id)
-        user.looses = data.looses
-        user.wins = data.wins
-        user.skip_count = data.skip_count
-        user.last_game_at = data.last_game_at
-        user.longest_streak = data.longest_streak
-        self.session.add(user)
-        await self.session.commit()
-        return user
+        pass
 
     async def get_user_statistics(self, chat_id: int) -> UserStatisticsDTO | None:
         query = (
