@@ -86,13 +86,25 @@ async def send_paired_players_list(bot):
         return
 
     # Удаляет из броней тех людей, которые заблокировали бота
+    # TODO это костыль, нужен обработчик запросов с проверкой на доступность юзера
     for booking in bookings:
         try:
             await bot.get_chat(booking.user_id)
         except TelegramBadRequest:
             bookings.remove(booking)
-    bookings_set = set(bookings)
 
+    if len(bookings) == 1:
+        try:
+            await bot.send_message(
+                chat_id=bookings[0].user_id,
+                text=texts.TOO_LITTLE_BOOKINGS_FOR_AFTER_DAILY,
+            )
+        except TelegramBadRequest as e:
+            print(e)
+        finally:
+            return None
+
+    bookings_set = set(bookings)
     paired_bookings = []
     unpaired = None
     # Формирует пары ID игроков случайным образом
