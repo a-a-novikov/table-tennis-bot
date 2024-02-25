@@ -7,10 +7,12 @@ from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import texts
+from texts.after_daily import REGISTRATION_ANNOUNCE, REGISTRATION_CONFIRMED, REGISTRATION_DECLINED, \
+    TOO_LITTLE_BOOKINGS_FOR_AFTER_DAILY, format_pairs_list, MARK_GAME_RESULT, WON_RESULT_MARKED, \
+    LOOSE_RESULT_MARKED, SKIPPED_RESULT_MARKED
 from constants import MONTHS
 from db.base import DBSessionFactory
-from helpers import get_pretty_name_from_chat, check_if_today_is_holiday
+from utils.text_formatters import get_pretty_name_from_chat
 from keyboards import registration_kb, RegistrationChoice, reset_registration_kb, game_result_kb, \
     GameResultChoice
 from middlewares import DBSessionMiddleware
@@ -27,14 +29,12 @@ async def send_invitation(bot, chat_id):
     today_date = f"{date.today().day} {MONTHS[date.today().month]}"
     await bot.send_message(
         chat_id=chat_id,
-        text=texts.REGISTRATION_ANNOUNCE.format(date=today_date),
+        text=REGISTRATION_ANNOUNCE.format(date=today_date),
         reply_markup=registration_kb(),
     )
 
 
 async def send_daily_invitation(bot):
-    if check_if_today_is_holiday():
-        return
     async with DBSessionFactory() as session:
         users = await UserManager(session).get_all_users()
     for user in users:
@@ -52,7 +52,7 @@ async def registration_canceled_handler(callback: types.CallbackQuery, session: 
     await callback.bot.edit_message_text(
         chat_id=callback.message.chat.id,
         message_id=callback.message.message_id,
-        text=texts.REGISTRATION_ANNOUNCE.format(date=today_date),
+        text=REGISTRATION_ANNOUNCE.format(date=today_date),
         reply_markup=registration_kb(),
     )
 
@@ -68,7 +68,7 @@ async def registration_survey_handler(callback: types.CallbackQuery, session: As
     if not is_registered and request_status == RegistrationChoice.IN_GAME:
         await after_daily_booking_manager.add_booking(chat_id)
     today_date = f"{date.today().day} {MONTHS[date.today().month]}"
-    confirmation_text = texts.REGISTRATION_CONFIRMED if request_status == RegistrationChoice.IN_GAME else texts.REGISTRATION_DECLINED
+    confirmation_text = REGISTRATION_CONFIRMED if request_status == RegistrationChoice.IN_GAME else REGISTRATION_DECLINED
     await callback.bot.edit_message_text(
         chat_id=callback.message.chat.id,
         message_id=callback.message.message_id,
@@ -78,8 +78,6 @@ async def registration_survey_handler(callback: types.CallbackQuery, session: As
 
 
 async def send_paired_players_list(bot):
-    if check_if_today_is_holiday():
-        return
     async with DBSessionFactory() as session:
         bookings = await AfterDailyBookingManager(session).get_all_bookings_for_date()
     if not bookings:
@@ -97,7 +95,7 @@ async def send_paired_players_list(bot):
         try:
             await bot.send_message(
                 chat_id=bookings[0].user_id,
-                text=texts.TOO_LITTLE_BOOKINGS_FOR_AFTER_DAILY,
+                text=TOO_LITTLE_BOOKINGS_FOR_AFTER_DAILY,
             )
         except TelegramBadRequest as e:
             print(e)
@@ -142,7 +140,7 @@ async def send_paired_players_list(bot):
         try:
             await bot.send_message(
                 chat_id=booking.user_id,
-                text=texts.format_pairs_list(paired_usernames),
+                text=format_pairs_list(paired_usernames),
                 parse_mode=ParseMode.HTML,
             )
         except TelegramBadRequest as e:
@@ -150,14 +148,12 @@ async def send_paired_players_list(bot):
 
 
 async def send_save_game_result_messages(bot):
-    if check_if_today_is_holiday():
-        return
     async with DBSessionFactory() as session:
         bookings = await AfterDailyBookingManager(session).get_all_bookings_for_date()
     for booking in bookings:
         await bot.send_message(
             chat_id=booking.user_id,
-            text=texts.MARK_GAME_RESULT,
+            text=MARK_GAME_RESULT,
             reply_markup=game_result_kb(),
         )
 
@@ -169,9 +165,9 @@ async def result_survey_handler(callback: types.CallbackQuery, session: AsyncSes
     chat_id = callback.message.chat.id
     game_result = GameResultChoice[callback.data]
     result_to_reply_text = {
-        GameResultChoice.WIN: texts.WON_RESULT_MARKED,
-        GameResultChoice.LOOSE: texts.LOOSE_RESULT_MARKED,
-        GameResultChoice.SKIPPED: texts.SKIPPED_RESULT_MARKED,
+        GameResultChoice.WIN: WON_RESULT_MARKED,
+        GameResultChoice.LOOSE: LOOSE_RESULT_MARKED,
+        GameResultChoice.SKIPPED: SKIPPED_RESULT_MARKED,
     }
     if game_result in (GameResultChoice.WIN, game_result.LOOSE):
         await AfterDailyBookingManager(session).update_booking(

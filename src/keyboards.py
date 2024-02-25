@@ -6,7 +6,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder, 
     InlineKeyboardButton, KeyboardButton
 
 from dto import EnrichedUserDTO
-from helpers import get_pretty_name_from_user_dto
+from utils.text_formatters import get_pretty_name_from_user_dto
 
 
 class RegistrationChoice(Enum):

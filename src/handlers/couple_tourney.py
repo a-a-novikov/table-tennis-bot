@@ -2,8 +2,12 @@ from aiogram import Router, types, F
 from aiogram.enums import ParseMode
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import texts
-from helpers import get_pretty_name_from_chat, get_pretty_name_from_user_dto, parse_int_to_emoji_int
+from texts.couple_tourney import ACCEPTOR_SELECTION, get_current_tourney_info, \
+    TOURNEY_MANUALLY_FINISHED, TOURNEY_GAME_RESULT_SELECTION, TOURNEY_ACCEPTED, TOURNEY_DECLINED, \
+    TOURNEY_FINISHED, TOURNEY_GAME_RESULT_RECORDED, ACCEPTOR_SELECTED, TOURNEY_REGISTERED, \
+    ACCEPTION_REQUEST
+from utils.text_formatters import get_pretty_name_from_chat, get_pretty_name_from_user_dto, \
+    parse_int_to_emoji_int
 from keyboards import get_users_available_for_tourney_kb, get_tourney_length_kb, \
     get_personal_game_kb, get_tourney_game_result_kb, get_tourney_acceptance_kb, \
     TourneyAcceptanceChoice, get_couple_tourney_cancel_kb
@@ -23,7 +27,7 @@ async def new_tourney_request_handler(message: types.Message, session: AsyncSess
     users = await UserManager(session).get_all_users_enriched(message.bot)
     users_available_for_tourney = await CoupleTourneyManager(session).get_users_available_for_tourney(users, chat_id)
     await message.answer(
-        text=texts.ACCEPTOR_SELECTION,
+        text=ACCEPTOR_SELECTION,
         reply_markup=get_users_available_for_tourney_kb(users_available_for_tourney, chat_id),
     )
 
@@ -36,7 +40,7 @@ async def tourney_info_handler(message: types.Message, session: AsyncSession):
     initiator = await user_manager.get_user_enriched(tourney.initiator_id, message.bot)
     acceptor = await user_manager.get_user_enriched(tourney.acceptor_id, message.bot)
     await message.answer(
-        text=texts.get_current_tourney_info(
+        text=get_current_tourney_info(
             wins_total=tourney.wins_total,
             day=tourney.registered_at.day,
             month=tourney.registered_at.month,
@@ -65,12 +69,12 @@ async def cancel_tourney_request_handler(callback: types.CallbackQuery, session:
         message_id=callback.message.message_id,
     )
     await callback.message.answer(
-        text=texts.TOURNEY_MANUALLY_FINISHED,
+        text=TOURNEY_MANUALLY_FINISHED,
         reply_markup=get_personal_game_kb(),
     )
     await callback.bot.send_message(
         chat_id=current_tourney.acceptor_id if current_tourney.initiator_id == chat_id else current_tourney.acceptor_id,
-        text=texts.TOURNEY_MANUALLY_FINISHED,
+        text=TOURNEY_MANUALLY_FINISHED,
         reply_markup=get_personal_game_kb(),
     )
 
@@ -83,7 +87,7 @@ async def new_game_to_record_handler(message: types.Message, session: AsyncSessi
     initiator = await user_manager.get_user_enriched(tourney.initiator_id, message.bot)
     acceptor = await user_manager.get_user_enriched(tourney.acceptor_id, message.bot)
     await message.answer(
-        text=texts.TOURNEY_GAME_RESULT_SELECTION,
+        text=TOURNEY_GAME_RESULT_SELECTION,
         reply_markup=get_tourney_game_result_kb(initiator, acceptor),
     )
 
@@ -100,10 +104,10 @@ async def accept_or_decline_tourney_handler(callback: types.CallbackQuery, sessi
     is_tourney_accepted = callback.data == TourneyAcceptanceChoice.IN_GAME.value
     if is_tourney_accepted:
         await tourney_manager.accept_tourney(chat_id)
-        text = texts.TOURNEY_ACCEPTED
+        text = TOURNEY_ACCEPTED
     else:
         await tourney_manager.decline_tourney(chat_id)
-        text = texts.TOURNEY_DECLINED.format(
+        text = TOURNEY_DECLINED.format(
             initiator=get_pretty_name_from_user_dto(initiator),
             acceptor=get_pretty_name_from_user_dto(acceptor),
         )
@@ -161,7 +165,7 @@ async def process_tourney_game_result_handler(callback: types.CallbackQuery, ses
         if tourney.wins_total in (tourney.initiator_wins, tourney.acceptor_wins):
             await callback.bot.send_message(
                 chat_id=user_id,
-                text=texts.TOURNEY_FINISHED.format(
+                text=TOURNEY_FINISHED.format(
                     winner=winner_pretty_name,
                     winner_wins=tourney.wins_total,
                     loser=looser_pretty_name,
@@ -174,7 +178,7 @@ async def process_tourney_game_result_handler(callback: types.CallbackQuery, ses
         else:
             await callback.bot.send_message(
                 chat_id=user_id,
-                text=texts.TOURNEY_GAME_RESULT_RECORDED.format(
+                text=TOURNEY_GAME_RESULT_RECORDED.format(
                     player1_wins=parse_int_to_emoji_int(winner_wins),
                     player1=winner_pretty_name,
                     player2_wins=parse_int_to_emoji_int(looser_wins),
@@ -194,7 +198,7 @@ async def change_users_page_handler(callback: types.CallbackQuery, session: Asyn
     await callback.bot.edit_message_text(
         chat_id=callback.message.chat.id,
         message_id=callback.message.message_id,
-        text=texts.ACCEPTOR_SELECTION,
+        text=ACCEPTOR_SELECTION,
         reply_markup=get_users_available_for_tourney_kb(users_available_for_tourney, chat_id, offset),
     )
 
@@ -214,7 +218,7 @@ async def process_acceptor_choice_handler(callback: types.CallbackQuery, session
     await callback.bot.edit_message_text(
         chat_id=callback.message.chat.id,
         message_id=callback.message.message_id,
-        text=texts.ACCEPTOR_SELECTED.format(acceptor=acceptor_name),
+        text=ACCEPTOR_SELECTED.format(acceptor=acceptor_name),
         reply_markup=get_tourney_length_kb(acceptor_id),
     )
 
@@ -242,11 +246,11 @@ async def process_tourney_length_choice_handler(callback: types.CallbackQuery, s
         message_id=callback.message.message_id,
     )
     await callback.message.answer(
-        text=texts.TOURNEY_REGISTERED,
+        text=TOURNEY_REGISTERED,
         reply_markup=get_personal_game_kb(now_in_tourney=True),
     )
     await callback.bot.send_message(
         chat_id=acceptor_id,
-        text=texts.ACCEPTION_REQUEST.format(initiator=get_pretty_name_from_user_dto(initiator)),
+        text=ACCEPTION_REQUEST.format(initiator=get_pretty_name_from_user_dto(initiator)),
         reply_markup=get_tourney_acceptance_kb(),
     )

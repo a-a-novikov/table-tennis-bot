@@ -16,11 +16,18 @@ class Settings(BaseSettings):
     REDIS_PASSWORD: str | None
     REDIS_DATA_TTL: int
     REDIS_STATE_TTL: int
+
+    AFTER_DAILY_INVITATION_CRON: str
+    AFTER_DAILY_PAIRED_PLAYERS_LIST_CRON: str
+    AFTER_DAILY_RESULT_SURVEY_CRON: str
+
     BOT_TOKEN: str
+    ADMIN_CHAT_IDS: list[int] = []
+
     POSTGRES_DSN: str
+
     DEBUG: bool = False
     LOGGING_LEVEL: int = 1
-    ADMIN_CHAT_IDS: list[int] = []
 
     class Config:
         case_sensitive = True

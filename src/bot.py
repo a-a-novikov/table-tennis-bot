@@ -8,17 +8,29 @@ from redis.asyncio.client import Redis
 
 from config import settings
 from dispatcher import get_dispatcher, get_redis_storage
-from handlers.after_daily import send_daily_invitation, send_paired_players_list, \
-    send_save_game_result_messages
+from handlers import after_daily
+from utils.cron import cron_exp_to_scheduler_kwargs
 
 
 async def setup_periodic_tasks(bot):
     scheduler = AsyncIOScheduler(timezone=pytz.timezone("Asia/Novosibirsk"))
 
     # after-daily crons
-    scheduler.add_job(send_daily_invitation, "cron", hour=13, minute=50, args=(bot,))
-    scheduler.add_job(send_paired_players_list, "cron", hour=14, minute=35, args=(bot,))
-    scheduler.add_job(send_save_game_result_messages, "cron", hour=15, minute=15, args=(bot,))
+    scheduler.add_job(
+        func=after_daily.send_daily_invitation,
+        args=(bot,),
+        **cron_exp_to_scheduler_kwargs(settings.AFTER_DAILY_INVITATION_CRON),
+    )
+    scheduler.add_job(
+        func=after_daily.send_paired_players_list,
+        args=(bot,),
+        **cron_exp_to_scheduler_kwargs(settings.AFTER_DAILY_PAIRED_PLAYERS_LIST_CRON),
+    )
+    scheduler.add_job(
+        func=after_daily.send_save_game_result_messages,
+        args=(bot,),
+        **cron_exp_to_scheduler_kwargs(settings.AFTER_DAILY_RESULT_SURVEY_CRON),
+    )
 
     scheduler.start()
 
