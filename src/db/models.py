@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import Date, DateTime, ForeignKey, Index
+from sqlalchemy import Date, DateTime, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base import Base
@@ -11,15 +11,22 @@ class User(Base):
     __tablename__ = "user"
 
     chat_id: Mapped[int] = mapped_column(primary_key=True)
+    title_poky_id: Mapped[int] = mapped_column(ForeignKey("poky_ball.id"), nullable=True)
 
+    title_poky: Mapped["PokyBall"] = relationship(
+        back_populates="title_poky_balls", foreign_keys=[title_poky_id]
+    )
     bookings: Mapped[list["AfterDailyBooking"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
     initiated_tourneys: Mapped[list["CoupleTourney"]] = relationship(
-        back_populates="initiator", cascade="all, delete-orphan",  foreign_keys="[CoupleTourney.initiator_id]",
+        back_populates="initiator",  foreign_keys="[CoupleTourney.initiator_id]",
     )
     accepted_tourneys: Mapped[list["CoupleTourney"]] = relationship(
-        back_populates="acceptor", cascade="all, delete-orphan", foreign_keys="[CoupleTourney.acceptor_id]",
+        back_populates="acceptor", foreign_keys="[CoupleTourney.acceptor_id]",
+    )
+    poky_balls: Mapped[list["PokyBall"]] = relationship(
+        back_populates="owner", foreign_keys="[PokyBall.owner_id]"
     )
 
 
@@ -55,3 +62,17 @@ class CoupleTourney(Base):
     acceptor: Mapped["User"] = relationship(back_populates="accepted_tourneys", foreign_keys=[acceptor_id])
 
     __mapper_args__ = {"primary_key": [initiator_id, acceptor_id, registered_at]}
+
+
+class PokyBall(Base):
+    __tablename__ = "poky_ball"
+
+    id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
+    emoji: Mapped[str] = mapped_column(String(4), unique=True, index=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("user.chat_id"), nullable=True)
+    ownership_since: Mapped[date] = mapped_column(Date(), nullable=True)
+
+    owner: Mapped["User"] = relationship(back_populates="poky_balls", foreign_keys=[owner_id])
+    title_poky_balls: Mapped[list["User"]] = relationship(
+        back_populates="title_poky",  foreign_keys="[User.title_poky_id]",
+    )

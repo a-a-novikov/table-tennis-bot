@@ -1,18 +1,9 @@
 import datetime
 
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from dto import CoupleTourneyDTO, UserDTO, EnrichedUserDTO
+from dto import CoupleTourneyDTO, EnrichedUserDTO
 from repositories.couple_tourney import CoupleTourneyRepository
-
-
-class TooManyTourneys(Exception):
-    pass
-
-
-class ActiveTourneyNotFound(Exception):
-    pass
 
 
 class CoupleTourneyManager:
@@ -26,56 +17,45 @@ class CoupleTourneyManager:
         wins_total: int,
         registered_at: datetime.date = datetime.date.today(),
     ) -> CoupleTourneyDTO:
-        try:
-            tourney = await self.repository.create_tourney(initiator_id, acceptor_id, wins_total, registered_at)
-        except IntegrityError:
-            raise TooManyTourneys()
-        return CoupleTourneyDTO.from_db(tourney)
+        return await self.repository.create_tourney(initiator_id, acceptor_id, wins_total, registered_at)
 
     async def get_active_tourney(self, initiator_or_acceptor_id: int) -> CoupleTourneyDTO | None:
-        tourney = await self.repository.retrieve_active_tourney(initiator_or_acceptor_id)
-        if not tourney:
-            return None
-        return CoupleTourneyDTO.from_db(tourney)
+        return await self.repository.retrieve_active_tourney(initiator_or_acceptor_id)
 
     async def update_active_tourney_score(self, winner_id: int) -> CoupleTourneyDTO:
         tourney = await self.repository.retrieve_active_tourney(winner_id)
-        if not tourney:
-            raise ActiveTourneyNotFound()
-        tourney_dto = CoupleTourneyDTO.from_db(tourney)
 
-        tourney_dto.games_played += 1
-        if winner_id == tourney_dto.initiator_id:
-            tourney_dto.initiator_wins += 1
+        tourney.games_played += 1
+        if winner_id == tourney.initiator_id:
+            tourney.initiator_wins += 1
         else:
-            tourney_dto.acceptor_wins += 1
+            tourney.acceptor_wins += 1
 
-        updated_tourney = await self.repository.update_active_tourney(tourney_dto)
-        return CoupleTourneyDTO.from_db(updated_tourney)
+        if tourney.wins_total in (tourney.initiator_wins, tourney.acceptor_wins):
+            tourney.is_finished = True
+        updated_tourney = await self.repository.update_active_tourney(tourney)
+        return updated_tourney
 
     async def accept_tourney(self, acceptor_id: int) -> None:
         tourney = await self.repository.retrieve_active_tourney(acceptor_id)
         if not tourney:
             return None
-        tourney_dto = CoupleTourneyDTO.from_db(tourney)
-        tourney_dto.is_accepted = True
-        await self.repository.update_active_tourney(tourney_dto)
+        tourney.is_accepted = True
+        await self.repository.update_active_tourney(tourney)
 
     async def decline_tourney(self, acceptor_id: int) -> None:
         tourney = await self.repository.retrieve_active_tourney(acceptor_id)
         if not tourney:
             return None
-        tourney_dto = CoupleTourneyDTO.from_db(tourney)
-        tourney_dto.is_finished = True
-        await self.repository.update_active_tourney(tourney_dto)
+        tourney.is_finished = True
+        await self.repository.update_active_tourney(tourney)
 
     async def finish_tourney(self, initiator_or_acceptor_id: int) -> None:
         tourney = await self.repository.retrieve_active_tourney(initiator_or_acceptor_id)
         if not tourney:
             return None
-        tourney_dto = CoupleTourneyDTO.from_db(tourney)
-        tourney_dto.is_finished = True
-        await self.repository.update_active_tourney(tourney_dto)
+        tourney.is_finished = True
+        await self.repository.update_active_tourney(tourney)
 
     async def get_users_available_for_tourney(
         self,

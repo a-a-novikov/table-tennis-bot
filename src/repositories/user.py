@@ -7,23 +7,34 @@ from sqlalchemy import select, or_, func
 
 class UserRepository(BaseRepository):
 
-    async def create_user(self, data: UserDTO) -> User:
+    async def create_user(self, data: UserDTO) -> UserDTO:
         user = User(**data.__dict__)
         self.session.add(user)
         await self.session.commit()
         await self.session.refresh(user)
-        return user
+        return UserDTO.from_db(user)
 
-    async def retrieve_user(self, chat_id: int) -> User | None:
-        user = await self.session.get(User, chat_id)
-        return user
+    async def retrieve_user(self, chat_id: int) -> UserDTO | None:
+        user = await self.__retrieve_user(chat_id)
+        if not user:
+            return None
+        return UserDTO.from_db(user)
 
-    async def retrieve_all_users(self) -> list[User] | None:
+    async def __retrieve_user(self, chat_id: int) -> User | None:
+        return await self.session.get(User, chat_id)
+
+    async def retrieve_all_users(self) -> list[UserDTO] | None:
         users_query = await self.session.execute(select("*").select_from(User))
-        return [User(**u) for u in users_query.mappings().all()]
+        return [UserDTO(**u) for u in users_query.mappings().all()]
 
-    async def update_user(self, data: UserDTO) -> User:
-        pass
+    async def update_user(self, data: UserDTO) -> UserDTO | None:
+        user = await self.__retrieve_user(chat_id=data.chat_id)
+        if not user:
+            return None
+        user.title_poky_id = data.title_poky_id
+        self.session.add(user)
+        await self.session.commit()
+        return UserDTO.from_db(user)
 
     async def get_user_statistics(self, chat_id: int) -> UserStatisticsDTO | None:
         query = (

@@ -16,13 +16,13 @@ class UserManager:
             user = await self.repository.create_user(UserDTO(chat_id=chat_id))
         except IntegrityError:
             user = await self.repository.retrieve_user(chat_id)
-        return UserDTO.from_db(user)
+        return user
 
     async def get_user(self, chat_id: int) -> UserDTO | None:
-        user = await self.repository.retrieve_user(chat_id)
-        if not user:
-            return None
-        return UserDTO.from_db(user)
+        return await self.repository.retrieve_user(chat_id)
+
+    async def update_user(self, user: UserDTO) -> UserDTO | None:
+        return await self.repository.update_user(user)
 
     async def get_user_enriched(self, chat_id: int, bot: Bot) -> EnrichedUserDTO | None:
         user = await self.repository.retrieve_user(chat_id)
@@ -32,19 +32,14 @@ class UserManager:
             return None
         return EnrichedUserDTO(
             chat_id=user.chat_id,
+            title_poky_id=user.title_poky_id,
             username=user_chat.username,
             first_name=user_chat.first_name,
             last_name=user_chat.last_name,
         )
 
     async def get_all_users(self) -> list[UserDTO]:
-        users = await self.repository.retrieve_all_users()
-        return [
-            UserDTO(
-                chat_id=u.chat_id,
-        )
-            for u in users
-        ]
+        return await self.repository.retrieve_all_users()
     
     async def get_all_users_enriched(self, bot: Bot) -> list[EnrichedUserDTO]:
         users = await self.repository.retrieve_all_users()
@@ -56,6 +51,7 @@ class UserManager:
                 continue
             user_dto = EnrichedUserDTO(
                 chat_id=user.chat_id,
+                title_poky_id=user.title_poky_id,
                 username=user_chat.username,
                 first_name=user_chat.first_name,
                 last_name=user_chat.last_name,

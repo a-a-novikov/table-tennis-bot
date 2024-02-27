@@ -2,23 +2,26 @@ import dataclasses
 import datetime
 from typing import Self
 
-from db.models import User, AfterDailyBooking, CoupleTourney
+from db.models import User, AfterDailyBooking, CoupleTourney, PokyBall
 
 
 @dataclasses.dataclass
 class UserDTO:
     chat_id: int
+    title_poky_id: int | None
 
     @classmethod
     def from_db(cls, instance: User) -> Self:
         return UserDTO(
             chat_id=instance.chat_id,
+            title_poky_id=instance.title_poky_id,
         )
 
 
 @dataclasses.dataclass
 class EnrichedUserDTO:
     chat_id: int
+    title_poky_id: int | None
     username: str
     first_name: str | None
     last_name: str | None
@@ -85,3 +88,20 @@ class UserStatisticsDTO:
     couple_tourney_games_total: int
     couple_tourney_won: int
     couple_tourney_total: int
+
+
+@dataclasses.dataclass
+class PokyBallDTO:
+    id: int
+    owner_id: int
+    emoji: str
+    ownership_since: datetime.date
+
+    @classmethod
+    def from_db(cls, instance: PokyBall) -> Self:
+        return PokyBallDTO(
+            id=instance.id,
+            owner_id=instance.owner_id,
+            emoji=instance.emoji,
+            ownership_since=instance.ownership_since,
+        )

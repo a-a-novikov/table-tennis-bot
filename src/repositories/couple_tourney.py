@@ -1,10 +1,15 @@
 import datetime
 
 from sqlalchemy import select, or_, update
+from sqlalchemy.exc import IntegrityError
 
 from db.models import CoupleTourney
 from dto import CoupleTourneyDTO
 from repositories.base import BaseRepository
+
+
+class TourneyExists(Exception):
+    pass
 
 
 class CoupleTourneyRepository(BaseRepository):
@@ -15,7 +20,7 @@ class CoupleTourneyRepository(BaseRepository):
         acceptor_id: int,
         wins_total: int,
         registered_at: datetime.date,
-    ) -> CoupleTourney:
+    ) -> CoupleTourneyDTO:
         tourney = CoupleTourney(
             initiator_id=initiator_id,
             acceptor_id=acceptor_id,
@@ -23,11 +28,14 @@ class CoupleTourneyRepository(BaseRepository):
             wins_total=wins_total,
         )
         self.session.add(tourney)
-        await self.session.commit()
+        try:
+            await self.session.commit()
+        except IntegrityError:
+            raise TourneyExists
         await self.session.refresh(tourney)
-        return tourney
+        return CoupleTourneyDTO.from_db(tourney)
 
-    async def retrieve_active_tourney(self, initiator_or_acceptor_id: int) -> CoupleTourney | None:
+    async def retrieve_active_tourney(self, initiator_or_acceptor_id: int) -> CoupleTourneyDTO | None:
         query = select("*").select_from(CoupleTourney).where(
             or_(
                 CoupleTourney.acceptor_id == initiator_or_acceptor_id,
@@ -39,14 +47,14 @@ class CoupleTourneyRepository(BaseRepository):
         tourney_mapping = query_result.mappings().one_or_none()
         if not tourney_mapping:
             return None
-        return CoupleTourney(**tourney_mapping)
+        return CoupleTourneyDTO(**tourney_mapping)
 
     async def retrieve_tourney(
         self,
         initiator_id: int,
         acceptor_id: int,
-        registered_at :datetime.date,
-    ) -> CoupleTourney | None:
+        registered_at: datetime.date,
+    ) -> CoupleTourneyDTO | None:
         tourney = await self.session.get(
             CoupleTourney,
             {
@@ -55,9 +63,9 @@ class CoupleTourneyRepository(BaseRepository):
                 "registered_at": registered_at,
             },
         )
-        return tourney
+        return CoupleTourneyDTO.from_db(tourney)
 
-    async def update_active_tourney(self, data: CoupleTourneyDTO) -> CoupleTourney:
+    async def update_active_tourney(self, data: CoupleTourneyDTO) -> CoupleTourneyDTO:
         query = update(CoupleTourney).where(
             CoupleTourney.initiator_id == data.initiator_id,
             CoupleTourney.acceptor_id == data.acceptor_id,

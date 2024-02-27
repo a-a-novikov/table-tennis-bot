@@ -12,7 +12,7 @@ from texts.after_daily import REGISTRATION_ANNOUNCE, REGISTRATION_CONFIRMED, REG
     LOOSE_RESULT_MARKED, SKIPPED_RESULT_MARKED
 from constants import MONTHS
 from db.base import DBSessionFactory
-from utils.text_formatters import get_pretty_name_from_chat
+from utils.text_formatters import get_pretty_name_from_user_dto
 from keyboards import registration_kb, RegistrationChoice, reset_registration_kb, game_result_kb, \
     GameResultChoice
 from middlewares import DBSessionMiddleware
@@ -118,20 +118,25 @@ async def send_paired_players_list(bot):
 
     # Получает имена для распределенных по парам подписчиков
     paired_usernames = []
+    user_manager = UserManager(session)
     for pair_bookings in paired_bookings:
         try:
-            p1_chat = await bot.get_chat(pair_bookings[0].user_id)
-            p2_chat = await bot.get_chat(pair_bookings[1].user_id)
-            paired_usernames.append([get_pretty_name_from_chat(p1_chat), get_pretty_name_from_chat(p2_chat)])
+            p1 = await user_manager.get_user_enriched(pair_bookings[0].user_id, bot)
+            p2 = await user_manager.get_user_enriched(pair_bookings[1].user_id, bot)
+            p1_name = await get_pretty_name_from_user_dto(p1, session)
+            p2_name = await get_pretty_name_from_user_dto(p2, session)
+            paired_usernames.append([p1_name, p2_name])
         except TelegramBadRequest as e:
             print(e)
     # При нечетном кол-ве броней, составляет слушчайную пару с оставшимся в соло игроком
     if unpaired:
         try:
-            p1_chat = await bot.get_chat(unpaired.user_id)
+            p1 = await user_manager.get_user_enriched(unpaired.user_id, bot)
             bookings.remove(unpaired)
-            p2_chat = await bot.get_chat(random.choice(bookings).user_id)
-            paired_usernames.append([get_pretty_name_from_chat(p1_chat), get_pretty_name_from_chat(p2_chat)])
+            p2 = await user_manager.get_user_enriched(random.choice(bookings).user_id, bot)
+            p1_name = await get_pretty_name_from_user_dto(p1, session)
+            p2_name = await get_pretty_name_from_user_dto(p2, session)
+            paired_usernames.append([p1_name, p2_name])
         except TelegramBadRequest as e:
             print(e)
 

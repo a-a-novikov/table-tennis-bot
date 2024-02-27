@@ -2,15 +2,16 @@ from aiogram import Router, types, F
 from aiogram.enums import ParseMode
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from services.poky_ball_manager import PokyBallManager
 from texts.couple_tourney import ACCEPTOR_SELECTION, get_current_tourney_info, \
     TOURNEY_MANUALLY_FINISHED, TOURNEY_GAME_RESULT_SELECTION, TOURNEY_ACCEPTED, TOURNEY_DECLINED, \
     TOURNEY_FINISHED, TOURNEY_GAME_RESULT_RECORDED, ACCEPTOR_SELECTED, TOURNEY_REGISTERED, \
-    ACCEPTION_REQUEST
-from utils.text_formatters import get_pretty_name_from_chat, get_pretty_name_from_user_dto, \
+    ACCEPTION_REQUEST, CHOOSE_TROPHY_POKY_BALL, TROPHY_POKY_BALL_RETRIEVED, POKY_BALL_LOST
+from utils.text_formatters import get_pretty_name_from_user_dto, \
     parse_int_to_emoji_int
 from keyboards import get_users_available_for_tourney_kb, get_tourney_length_kb, \
     get_personal_game_kb, get_tourney_game_result_kb, get_tourney_acceptance_kb, \
-    TourneyAcceptanceChoice, get_couple_tourney_cancel_kb
+    TourneyAcceptanceChoice, get_couple_tourney_cancel_kb, get_choose_trophy_poky_ball_kb
 from middlewares import DBSessionMiddleware
 from services.couple_tourney_manager import CoupleTourneyManager
 from services.user_manager import UserManager
@@ -26,9 +27,10 @@ async def new_tourney_request_handler(message: types.Message, session: AsyncSess
     chat_id = message.chat.id
     users = await UserManager(session).get_all_users_enriched(message.bot)
     users_available_for_tourney = await CoupleTourneyManager(session).get_users_available_for_tourney(users, chat_id)
+    reply_markup = await get_users_available_for_tourney_kb(users_available_for_tourney, chat_id, session)
     await message.answer(
         text=ACCEPTOR_SELECTION,
-        reply_markup=get_users_available_for_tourney_kb(users_available_for_tourney, chat_id),
+        reply_markup=reply_markup,
     )
 
 
@@ -39,14 +41,16 @@ async def tourney_info_handler(message: types.Message, session: AsyncSession):
     user_manager = UserManager(session)
     initiator = await user_manager.get_user_enriched(tourney.initiator_id, message.bot)
     acceptor = await user_manager.get_user_enriched(tourney.acceptor_id, message.bot)
+    initiator_name = await get_pretty_name_from_user_dto(initiator, session)
+    acceptor_name = await get_pretty_name_from_user_dto(acceptor, session)
     await message.answer(
         text=get_current_tourney_info(
             wins_total=tourney.wins_total,
             day=tourney.registered_at.day,
             month=tourney.registered_at.month,
-            initiator_name=get_pretty_name_from_user_dto(initiator),
+            initiator_name=initiator_name,
             initiator_wins=tourney.initiator_wins,
-            acceptor_name=get_pretty_name_from_user_dto(acceptor),
+            acceptor_name=acceptor_name,
             acceptor_wins=tourney.acceptor_wins,
         ),
         reply_markup=get_couple_tourney_cancel_kb(),
@@ -58,7 +62,6 @@ async def tourney_info_handler(message: types.Message, session: AsyncSession):
 async def cancel_tourney_request_handler(callback: types.CallbackQuery, session: AsyncSession):
     chat_id = callback.message.chat.id
     tourney_manager = CoupleTourneyManager(session)
-
     current_tourney = await tourney_manager.get_active_tourney(chat_id)
     if not current_tourney:
         return None
@@ -68,13 +71,23 @@ async def cancel_tourney_request_handler(callback: types.CallbackQuery, session:
         chat_id=chat_id,
         message_id=callback.message.message_id,
     )
+
+    user_manager = UserManager(session)
+    initiator = await user_manager.get_user_enriched(chat_id, callback.bot)  # TODO refactor getting name of user - go DRY
+    initiator_name = await get_pretty_name_from_user_dto(initiator, session)
+    acceptor_id = current_tourney.acceptor_id if current_tourney.initiator_id == chat_id else current_tourney.acceptor_id
+    acceptor = await user_manager.get_user_enriched(acceptor_id, callback.bot)
+    acceptor_name = await get_pretty_name_from_user_dto(acceptor, session)
+
     await callback.message.answer(
-        text=TOURNEY_MANUALLY_FINISHED,
+        text=TOURNEY_MANUALLY_FINISHED.format(initiator=initiator_name, acceptor=acceptor_name),
+        parse_mode=ParseMode.HTML,
         reply_markup=get_personal_game_kb(),
     )
     await callback.bot.send_message(
-        chat_id=current_tourney.acceptor_id if current_tourney.initiator_id == chat_id else current_tourney.acceptor_id,
-        text=TOURNEY_MANUALLY_FINISHED,
+        chat_id=acceptor_id,
+        text=TOURNEY_MANUALLY_FINISHED.format(initiator=initiator_name, acceptor=acceptor_name),
+        parse_mode=ParseMode.HTML,
         reply_markup=get_personal_game_kb(),
     )
 
@@ -86,9 +99,10 @@ async def new_game_to_record_handler(message: types.Message, session: AsyncSessi
     user_manager = UserManager(session)
     initiator = await user_manager.get_user_enriched(tourney.initiator_id, message.bot)
     acceptor = await user_manager.get_user_enriched(tourney.acceptor_id, message.bot)
+    reply_markup = await get_tourney_game_result_kb(initiator, acceptor, session)
     await message.answer(
         text=TOURNEY_GAME_RESULT_SELECTION,
-        reply_markup=get_tourney_game_result_kb(initiator, acceptor),
+        reply_markup=reply_markup,
     )
 
 
@@ -101,6 +115,8 @@ async def accept_or_decline_tourney_handler(callback: types.CallbackQuery, sessi
     user_manager = UserManager(session)
     initiator = await user_manager.get_user_enriched(tourney.initiator_id, callback.bot)
     acceptor = await user_manager.get_user_enriched(tourney.acceptor_id, callback.bot)
+    initiator_name = await get_pretty_name_from_user_dto(initiator, session)  # TODO refactor of func - cross-layer dependency
+    acceptor_name = await get_pretty_name_from_user_dto(acceptor, session)
     is_tourney_accepted = callback.data == TourneyAcceptanceChoice.IN_GAME.value
     if is_tourney_accepted:
         await tourney_manager.accept_tourney(chat_id)
@@ -108,8 +124,8 @@ async def accept_or_decline_tourney_handler(callback: types.CallbackQuery, sessi
     else:
         await tourney_manager.decline_tourney(chat_id)
         text = TOURNEY_DECLINED.format(
-            initiator=get_pretty_name_from_user_dto(initiator),
-            acceptor=get_pretty_name_from_user_dto(acceptor),
+            initiator=initiator_name,
+            acceptor=acceptor_name,
         )
 
     await callback.bot.delete_message(
@@ -120,8 +136,8 @@ async def accept_or_decline_tourney_handler(callback: types.CallbackQuery, sessi
         await callback.bot.send_message(
             chat_id=user_id,
             text=text.format(
-                initiator=get_pretty_name_from_user_dto(initiator),
-                acceptor=get_pretty_name_from_user_dto(acceptor),
+                initiator=initiator_name,
+                acceptor=acceptor_name,
             ),
             parse_mode=ParseMode.HTML,
             reply_markup=get_personal_game_kb(now_in_tourney=True if is_tourney_accepted else False)
@@ -139,30 +155,21 @@ async def process_tourney_game_result_handler(callback: types.CallbackQuery, ses
         message_id=callback.message.message_id,
     )
 
-    user_manager = UserManager(session)
-    if tourney.initiator_wins == tourney.wins_total:
-        winner_id, looser_id = tourney.initiator_id, tourney.acceptor_id
-        winner_wins = tourney.initiator_wins
-        looser_wins = tourney.acceptor_wins
-        await tourney_manager.finish_tourney(winner_id)
-    elif tourney.acceptor_wins == tourney.wins_total:
-        winner_id, looser_id = tourney.acceptor_id, tourney.initiator_id
-        winner_wins = tourney.acceptor_wins
-        looser_wins = tourney.initiator_wins
-        await tourney_manager.finish_tourney(winner_id)
+    if winner_id == tourney.initiator_id:
+        winner_id, winner_wins = tourney.initiator_id, tourney.initiator_wins
+        looser_id, looser_wins = tourney.acceptor_id, tourney.acceptor_wins
     else:
-        winner_id = tourney.initiator_id if tourney.initiator_id == winner_id else tourney.acceptor_id
-        looser_id = tourney.acceptor_id if tourney.initiator_id == winner_id else tourney.initiator_id
-        winner_wins = tourney.initiator_wins if tourney.initiator_id == winner_id else tourney.acceptor_wins
-        looser_wins = tourney.acceptor_wins if tourney.initiator_id == winner_id else tourney.initiator_wins
+        winner_id, winner_wins = tourney.acceptor_id, tourney.acceptor_wins
+        looser_id, looser_wins = tourney.initiator_id, tourney.initiator_wins
+
+    user_manager = UserManager(session)
     winner = await user_manager.get_user_enriched(winner_id, callback.bot)
     looser = await user_manager.get_user_enriched(looser_id, callback.bot)
+    winner_pretty_name = await get_pretty_name_from_user_dto(winner, session)
+    looser_pretty_name = await get_pretty_name_from_user_dto(looser, session)
 
     for user_id in (tourney.initiator_id, tourney.acceptor_id):
-        winner_pretty_name = get_pretty_name_from_user_dto(winner)
-        looser_pretty_name = get_pretty_name_from_user_dto(looser)
-        # дуэль завершена
-        if tourney.wins_total in (tourney.initiator_wins, tourney.acceptor_wins):
+        if tourney.is_finished:
             await callback.bot.send_message(
                 chat_id=user_id,
                 text=TOURNEY_FINISHED.format(
@@ -174,7 +181,6 @@ async def process_tourney_game_result_handler(callback: types.CallbackQuery, ses
                 parse_mode=ParseMode.HTML,
                 reply_markup=get_personal_game_kb(),
             )
-        # дуэль еще продолжается
         else:
             await callback.bot.send_message(
                 chat_id=user_id,
@@ -186,6 +192,46 @@ async def process_tourney_game_result_handler(callback: types.CallbackQuery, ses
                 ),
                 parse_mode=ParseMode.HTML,
             )
+
+    if tourney.is_finished:
+        looser_poky_balls = await PokyBallManager(session).get_all_poky_balls_by_owner(looser_id)
+        if looser_poky_balls:
+            await callback.bot.send_message(
+                chat_id=winner_id,
+                text=CHOOSE_TROPHY_POKY_BALL,
+                parse_mode=ParseMode.HTML,
+                reply_markup=get_choose_trophy_poky_ball_kb(looser_id, looser_poky_balls),
+            )
+
+
+@router.callback_query(lambda c: "trophy-poky_" in c.data)
+async def trophy_poky_ball_chosen_handler(callback: types.CallbackQuery, session: AsyncSession):
+    chat_id = callback.message.chat.id
+    await callback.bot.delete_message(
+        chat_id=chat_id,
+        message_id=callback.message.message_id,
+    )
+    poky_ball_id, trophy_owner_id = map(int, callback.data.replace("trophy-poky_", "").split("_"))
+    poky_ball_manager = PokyBallManager(session)
+    poky_ball = await poky_ball_manager.get_poky_ball(poky_ball_id)
+    if poky_ball.owner_id != trophy_owner_id:
+        return None
+
+    updated_poky_ball = await poky_ball_manager.update_poky_ball_owner(chat_id, poky_ball_id)
+    user_manager = UserManager(session)
+    prev_poky_owner = await user_manager.get_user(trophy_owner_id)
+    if prev_poky_owner.title_poky_id == poky_ball_id:
+        prev_poky_owner.title_poky_id = None
+        await user_manager.update_user(prev_poky_owner)
+
+    await callback.bot.send_message(
+        chat_id=callback.message.chat.id,
+        text=TROPHY_POKY_BALL_RETRIEVED.format(emoji=updated_poky_ball.emoji),
+    )
+    await callback.bot.send_message(
+        chat_id=trophy_owner_id,
+        text=POKY_BALL_LOST.format(emoji=updated_poky_ball.emoji),
+    )
 
 
 @router.callback_query(lambda c: "offset_" in c.data)
@@ -213,8 +259,10 @@ async def process_acceptor_choice_handler(callback: types.CallbackQuery, session
             chat_id=callback.message.chat.id,
             message_id=callback.message.message_id,
         )
-    acceptor_chat = await callback.message.bot.get_chat(acceptor_id)
-    acceptor_name = get_pretty_name_from_chat(acceptor_chat)
+
+    acceptor = await UserManager(session).get_user_enriched(acceptor_id, callback.bot)
+    acceptor_name = await get_pretty_name_from_user_dto(acceptor, session)
+
     await callback.bot.edit_message_text(
         chat_id=callback.message.chat.id,
         message_id=callback.message.message_id,
@@ -249,8 +297,9 @@ async def process_tourney_length_choice_handler(callback: types.CallbackQuery, s
         text=TOURNEY_REGISTERED,
         reply_markup=get_personal_game_kb(now_in_tourney=True),
     )
+    initiator_name = await get_pretty_name_from_user_dto(initiator, session)
     await callback.bot.send_message(
         chat_id=acceptor_id,
-        text=ACCEPTION_REQUEST.format(initiator=get_pretty_name_from_user_dto(initiator)),
+        text=ACCEPTION_REQUEST.format(initiator=initiator_name),
         reply_markup=get_tourney_acceptance_kb(),
     )
