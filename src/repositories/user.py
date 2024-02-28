@@ -22,9 +22,9 @@ class UserRepository(BaseRepository):
 
     async def __retrieve_user(self, chat_id: int) -> User | None:
         user = await self.session.get(User, chat_id)
-        if user.deleted:
+        if user and user.deleted:
             return None
-        return None
+        return user
 
     async def retrieve_all_users(self) -> list[UserDTO] | None:
         users_query = await self.session.execute(select("*").select_from(User).where(User.deleted.is_(False)))
