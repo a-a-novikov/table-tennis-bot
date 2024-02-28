@@ -1,5 +1,5 @@
 from aiogram import Bot
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
@@ -28,7 +28,7 @@ class UserManager:
         user = await self.repository.retrieve_user(chat_id)
         try:
             user_chat = await bot.get_chat(chat_id=user.chat_id)
-        except TelegramBadRequest:
+        except (TelegramBadRequest, TelegramForbiddenError):
             return None
         return EnrichedUserDTO(
             chat_id=user.chat_id,
@@ -47,7 +47,7 @@ class UserManager:
         for user in users:
             try:
                 user_chat = await bot.get_chat(chat_id=user.chat_id)
-            except TelegramBadRequest:
+            except (TelegramBadRequest, TelegramForbiddenError):
                 continue
             user_dto = EnrichedUserDTO(
                 chat_id=user.chat_id,

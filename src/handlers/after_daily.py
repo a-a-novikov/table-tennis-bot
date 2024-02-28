@@ -4,7 +4,7 @@ from datetime import date
 from aiogram import F
 from aiogram import Router, types
 from aiogram.enums import ParseMode
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from texts.after_daily import REGISTRATION_ANNOUNCE, REGISTRATION_CONFIRMED, REGISTRATION_DECLINED, \
@@ -40,7 +40,7 @@ async def send_daily_invitation(bot):
     for user in users:
         try:
             await send_invitation(bot, user.chat_id)
-        except TelegramBadRequest:
+        except (TelegramBadRequest, TelegramForbiddenError):
             print("bad request")
 
 
@@ -88,7 +88,7 @@ async def send_paired_players_list(bot):
     for booking in bookings:
         try:
             await bot.get_chat(booking.user_id)
-        except TelegramBadRequest:
+        except (TelegramBadRequest, TelegramForbiddenError):
             bookings.remove(booking)
 
     if len(bookings) == 1:
@@ -97,8 +97,8 @@ async def send_paired_players_list(bot):
                 chat_id=bookings[0].user_id,
                 text=TOO_LITTLE_BOOKINGS_FOR_AFTER_DAILY,
             )
-        except TelegramBadRequest as e:
-            print(e)
+        except (TelegramBadRequest, TelegramForbiddenError):
+            print("telegram error")
         finally:
             return None
 
@@ -126,8 +126,8 @@ async def send_paired_players_list(bot):
             p1_name = await get_pretty_name_from_user_dto(p1, session)
             p2_name = await get_pretty_name_from_user_dto(p2, session)
             paired_usernames.append([p1_name, p2_name])
-        except TelegramBadRequest as e:
-            print(e)
+        except (TelegramBadRequest, TelegramForbiddenError):
+            print("telegram error")
     # При нечетном кол-ве броней, составляет слушчайную пару с оставшимся в соло игроком
     if unpaired:
         try:
@@ -137,8 +137,8 @@ async def send_paired_players_list(bot):
             p1_name = await get_pretty_name_from_user_dto(p1, session)
             p2_name = await get_pretty_name_from_user_dto(p2, session)
             paired_usernames.append([p1_name, p2_name])
-        except TelegramBadRequest as e:
-            print(e)
+        except (TelegramBadRequest, TelegramForbiddenError):
+            print("telegram error")
 
     # Отправляет список пар всем подписчикам бота
     for booking in bookings:
@@ -148,8 +148,8 @@ async def send_paired_players_list(bot):
                 text=format_pairs_list(paired_usernames),
                 parse_mode=ParseMode.HTML,
             )
-        except TelegramBadRequest as e:
-            print(e)
+        except (TelegramBadRequest, TelegramForbiddenError):
+            print("telegram error")
 
 
 async def send_save_game_result_messages(bot):
