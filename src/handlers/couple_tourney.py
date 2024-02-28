@@ -73,11 +73,11 @@ async def cancel_tourney_request_handler(callback: types.CallbackQuery, session:
     )
 
     user_manager = UserManager(session)
-    initiator = await user_manager.get_user_enriched(chat_id, callback.bot)  # TODO refactor getting name of user - go DRY
-    initiator_name = await get_pretty_name_from_user_dto(initiator, session)
-    acceptor_id = current_tourney.acceptor_id if current_tourney.initiator_id == chat_id else current_tourney.acceptor_id
-    acceptor = await user_manager.get_user_enriched(acceptor_id, callback.bot)
-    acceptor_name = await get_pretty_name_from_user_dto(acceptor, session)
+    cancel_initiator = await user_manager.get_user_enriched(chat_id, callback.bot)  # TODO refactor getting name of user - go DRY
+    initiator_name = await get_pretty_name_from_user_dto(cancel_initiator, session)
+    cancel_acceptor_id = current_tourney.acceptor_id if current_tourney.initiator_id == chat_id else current_tourney.initiator_id
+    cancel_acceptor = await user_manager.get_user_enriched(cancel_acceptor_id, callback.bot)
+    acceptor_name = await get_pretty_name_from_user_dto(cancel_acceptor, session)
 
     await callback.message.answer(
         text=TOURNEY_MANUALLY_FINISHED.format(initiator=initiator_name, acceptor=acceptor_name),
@@ -85,7 +85,7 @@ async def cancel_tourney_request_handler(callback: types.CallbackQuery, session:
         reply_markup=get_personal_game_kb(),
     )
     await callback.bot.send_message(
-        chat_id=acceptor_id,
+        chat_id=cancel_acceptor_id,
         text=TOURNEY_MANUALLY_FINISHED.format(initiator=initiator_name, acceptor=acceptor_name),
         parse_mode=ParseMode.HTML,
         reply_markup=get_personal_game_kb(),
