@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from sqlalchemy.exc import IntegrityError
@@ -26,9 +28,13 @@ class UserManager:
 
     async def get_user_enriched(self, chat_id: int, bot: Bot) -> EnrichedUserDTO | None:
         user = await self.repository.retrieve_user(chat_id)
+        if not user:
+            return None
         try:
             user_chat = await bot.get_chat(chat_id=user.chat_id)
         except (TelegramBadRequest, TelegramForbiddenError):
+            logging.warning(f"Failed to get user with chat_id={chat_id}")
+            await self.mark_user_as_deleted(chat_id)
             return None
         return EnrichedUserDTO(
             chat_id=user.chat_id,
@@ -48,6 +54,8 @@ class UserManager:
             try:
                 user_chat = await bot.get_chat(chat_id=user.chat_id)
             except (TelegramBadRequest, TelegramForbiddenError):
+                logging.warning(f"Failed to get user with chat_id={user.chat_id}")
+                await self.mark_user_as_deleted(user.chat_id)
                 continue
             user_dto = EnrichedUserDTO(
                 chat_id=user.chat_id,
@@ -62,3 +70,13 @@ class UserManager:
     async def get_user_statistics(self, chat_id: int) -> UserStatisticsDTO | None:
         statistics = await self.repository.get_user_statistics(chat_id)
         return statistics
+
+    async def mark_user_as_deleted(self, chat_id: int) -> None:
+        user = await self.get_user(chat_id)
+        user.deleted = True
+        await self.update_user(user)
+
+    async def mark_user_as_active(self, chat_id: int) -> None:
+        user = await self.get_user(chat_id)
+        user.deleted = False
+        await self.update_user(user)

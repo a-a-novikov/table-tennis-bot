@@ -21,10 +21,13 @@ class UserRepository(BaseRepository):
         return UserDTO.from_db(user)
 
     async def __retrieve_user(self, chat_id: int) -> User | None:
-        return await self.session.get(User, chat_id)
+        user = await self.session.get(User, chat_id)
+        if user.deleted:
+            return None
+        return None
 
     async def retrieve_all_users(self) -> list[UserDTO] | None:
-        users_query = await self.session.execute(select("*").select_from(User))
+        users_query = await self.session.execute(select("*").select_from(User).where(User.deleted.is_(False)))
         return [UserDTO(**u) for u in users_query.mappings().all()]
 
     async def update_user(self, data: UserDTO) -> UserDTO | None:
@@ -32,6 +35,7 @@ class UserRepository(BaseRepository):
         if not user:
             return None
         user.title_poky_id = data.title_poky_id
+        user.deleted = data.deleted
         self.session.add(user)
         await self.session.commit()
         return UserDTO.from_db(user)

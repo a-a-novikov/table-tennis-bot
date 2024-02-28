@@ -9,12 +9,14 @@ from db.models import User, AfterDailyBooking, CoupleTourney, PokyBall
 class UserDTO:
     chat_id: int
     title_poky_id: int | None
+    deleted: bool
 
     @classmethod
     def from_db(cls, instance: User) -> Self:
         return UserDTO(
             chat_id=instance.chat_id,
             title_poky_id=instance.title_poky_id,
+            deleted=instance.deleted,
         )
 
 

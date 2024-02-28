@@ -1,3 +1,4 @@
+import logging
 import random
 from datetime import date
 
@@ -25,23 +26,24 @@ router.message.middleware(DBSessionMiddleware())
 router.callback_query.middleware(DBSessionMiddleware())
 
 
-async def send_invitation(bot, chat_id):
+async def send_invitation(bot, chat_id, session):
     today_date = f"{date.today().day} {MONTHS[date.today().month]}"
-    await bot.send_message(
-        chat_id=chat_id,
-        text=REGISTRATION_ANNOUNCE.format(date=today_date),
-        reply_markup=registration_kb(),
-    )
+    try:
+        await bot.send_message(
+            chat_id=chat_id,
+            text=REGISTRATION_ANNOUNCE.format(date=today_date),
+            reply_markup=registration_kb(),
+        )
+    except (TelegramBadRequest, TelegramForbiddenError):
+        await UserManager(session).mark_user_as_deleted(chat_id)
+        logging.warning(f"Failed send daily invite to chat_id={chat_id}")
 
 
 async def send_daily_invitation(bot):
     async with DBSessionFactory() as session:
         users = await UserManager(session).get_all_users()
-    for user in users:
-        try:
-            await send_invitation(bot, user.chat_id)
-        except (TelegramBadRequest, TelegramForbiddenError):
-            print("bad request")
+        for user in users:
+            await send_invitation(bot, user.chat_id, session)
 
 
 @router.callback_query(F.data == RegistrationChoice.IDLE.value)
@@ -89,18 +91,16 @@ async def send_paired_players_list(bot):
         try:
             await bot.get_chat(booking.user_id)
         except (TelegramBadRequest, TelegramForbiddenError):
+            logging.warning(f"User with chat_id={booking.user_id} is unavailable")
+            await UserManager(session).mark_user_as_deleted(booking.user_id)
             bookings.remove(booking)
 
     if len(bookings) == 1:
-        try:
-            await bot.send_message(
-                chat_id=bookings[0].user_id,
-                text=TOO_LITTLE_BOOKINGS_FOR_AFTER_DAILY,
-            )
-        except (TelegramBadRequest, TelegramForbiddenError):
-            print("telegram error")
-        finally:
-            return None
+        await bot.send_message(
+            chat_id=bookings[0].user_id,
+            text=TOO_LITTLE_BOOKINGS_FOR_AFTER_DAILY,
+        )
+        return None
 
     bookings_set = set(bookings)
     paired_bookings = []
@@ -120,36 +120,27 @@ async def send_paired_players_list(bot):
     paired_usernames = []
     user_manager = UserManager(session)
     for pair_bookings in paired_bookings:
-        try:
-            p1 = await user_manager.get_user_enriched(pair_bookings[0].user_id, bot)
-            p2 = await user_manager.get_user_enriched(pair_bookings[1].user_id, bot)
-            p1_name = await get_pretty_name_from_user_dto(p1, session)
-            p2_name = await get_pretty_name_from_user_dto(p2, session)
-            paired_usernames.append([p1_name, p2_name])
-        except (TelegramBadRequest, TelegramForbiddenError):
-            print("telegram error")
+        p1 = await user_manager.get_user_enriched(pair_bookings[0].user_id, bot)
+        p2 = await user_manager.get_user_enriched(pair_bookings[1].user_id, bot)
+        p1_name = await get_pretty_name_from_user_dto(p1, session)
+        p2_name = await get_pretty_name_from_user_dto(p2, session)
+        paired_usernames.append([p1_name, p2_name])
     # При нечетном кол-ве броней, составляет слушчайную пару с оставшимся в соло игроком
     if unpaired:
-        try:
-            p1 = await user_manager.get_user_enriched(unpaired.user_id, bot)
-            bookings.remove(unpaired)
-            p2 = await user_manager.get_user_enriched(random.choice(bookings).user_id, bot)
-            p1_name = await get_pretty_name_from_user_dto(p1, session)
-            p2_name = await get_pretty_name_from_user_dto(p2, session)
-            paired_usernames.append([p1_name, p2_name])
-        except (TelegramBadRequest, TelegramForbiddenError):
-            print("telegram error")
+        p1 = await user_manager.get_user_enriched(unpaired.user_id, bot)
+        bookings.remove(unpaired)
+        p2 = await user_manager.get_user_enriched(random.choice(bookings).user_id, bot)
+        p1_name = await get_pretty_name_from_user_dto(p1, session)
+        p2_name = await get_pretty_name_from_user_dto(p2, session)
+        paired_usernames.append([p1_name, p2_name])
 
     # Отправляет список пар всем подписчикам бота
     for booking in bookings:
-        try:
-            await bot.send_message(
-                chat_id=booking.user_id,
-                text=format_pairs_list(paired_usernames),
-                parse_mode=ParseMode.HTML,
-            )
-        except (TelegramBadRequest, TelegramForbiddenError):
-            print("telegram error")
+        await bot.send_message(
+            chat_id=booking.user_id,
+            text=format_pairs_list(paired_usernames),
+            parse_mode=ParseMode.HTML,
+        )
 
 
 async def send_save_game_result_messages(bot):

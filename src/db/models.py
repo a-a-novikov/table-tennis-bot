@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import Date, DateTime, ForeignKey, Index, String
+from sqlalchemy import Date, DateTime, ForeignKey, Index, String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base import Base
@@ -12,6 +12,7 @@ class User(Base):
 
     chat_id: Mapped[int] = mapped_column(primary_key=True)
     title_poky_id: Mapped[int] = mapped_column(ForeignKey("poky_ball.id"), nullable=True)
+    deleted: Mapped[bool] = mapped_column(server_default="false")
 
     title_poky: Mapped["PokyBall"] = relationship(
         back_populates="title_poky_balls", foreign_keys=[title_poky_id]

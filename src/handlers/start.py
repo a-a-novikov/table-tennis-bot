@@ -25,9 +25,11 @@ async def cmd_start(message: types.Message, session: AsyncSession):
     chat_id = message.chat.id
 
     user_manager = UserManager(session)
-    user_exists = await user_manager.get_user(chat_id)
-    if not user_exists:
+    user = await user_manager.get_user(chat_id)
+    if not user:
         await user_manager.add_user(chat_id)
+    elif user.deleted:
+        await user_manager.mark_user_as_active(user.chat_id)
     booking_exists = await AfterDailyBookingManager(session).get_booking(chat_id)
     now_in_tourney = await CoupleTourneyManager(session).get_active_tourney(chat_id)
     await message.bot.send_message(
@@ -37,4 +39,4 @@ async def cmd_start(message: types.Message, session: AsyncSession):
     )
     novosibirsk_dt_now = datetime.datetime.now(tz=pytz.timezone("Asia/Novosibirsk"))
     if not booking_exists and not today_is_workday() and novosibirsk_dt_now.time() < datetime.time(hour=14, minute=30):
-        await send_invitation(message.bot, chat_id)
+        await send_invitation(message.bot, chat_id, session)
