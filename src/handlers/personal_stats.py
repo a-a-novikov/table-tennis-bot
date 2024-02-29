@@ -56,6 +56,7 @@ async def personal_stats_handler(message: types.Message, session: AsyncSession):
     poky_balls = await poky_manager.get_all_poky_balls_by_owner(chat_id)
     if not poky_balls:
         await message.bot.send_message(chat_id=chat_id, text=NO_POKIES_TO_SET_AS_TITLE)
+        return None
 
     await message.bot.send_message(
         chat_id=chat_id,
