@@ -240,12 +240,13 @@ async def change_users_page_handler(callback: types.CallbackQuery, session: Asyn
     offset = int(callback.data.replace("offset_", ""))
     users = await UserManager(session).get_all_users_enriched(callback.message.bot)
     users_available_for_tourney = await CoupleTourneyManager(session).get_users_available_for_tourney(users, chat_id)
+    available_users_kb = await get_users_available_for_tourney_kb(users_available_for_tourney, chat_id, session, offset)
 
     await callback.bot.edit_message_text(
         chat_id=callback.message.chat.id,
         message_id=callback.message.message_id,
         text=ACCEPTOR_SELECTION,
-        reply_markup=get_users_available_for_tourney_kb(users_available_for_tourney, chat_id, offset),
+        reply_markup=available_users_kb,
     )
 
 
@@ -295,7 +296,7 @@ async def process_tourney_length_choice_handler(callback: types.CallbackQuery, s
     )
     await callback.message.answer(
         text=TOURNEY_REGISTERED,
-        reply_markup=get_personal_game_kb(now_in_tourney=True),
+        reply_markup=get_personal_game_kb(),
     )
     initiator_name = await get_pretty_name_from_user_dto(initiator, session)
     await callback.bot.send_message(
