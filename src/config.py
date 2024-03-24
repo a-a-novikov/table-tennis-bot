@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     AFTER_DAILY_RESULT_SURVEY_CRON: str
 
     BOT_TOKEN: str
+    BOT_MAX_RETRIES: int = 5
+    BOT_DELAY_BETWEEN_RETRIES: float = 0.2
     ADMIN_CHAT_IDS: list[int] = []
 
     POSTGRES_DSN: str

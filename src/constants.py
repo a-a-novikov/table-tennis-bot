@@ -13,3 +13,13 @@ EMOJI_BY_INT = {
     8: "8️⃣",
     9: "9️⃣",
 }
+
+BOT_METHODS_TO_RETRY_ASYNC = [
+    "send_message",
+    "delete_message",
+    "get_chat",
+    "edit_message_text",
+    "answer_callback_query",
+]
+
+BOT_METHODS_TO_RETRY = []

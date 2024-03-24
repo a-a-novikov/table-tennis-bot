@@ -2,8 +2,7 @@ import logging
 import random
 from datetime import date
 
-from aiogram import F
-from aiogram import Router, types
+from aiogram import F, Router, types
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from sqlalchemy.ext.asyncio import AsyncSession
