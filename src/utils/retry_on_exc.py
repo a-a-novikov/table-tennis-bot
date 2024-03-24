@@ -10,7 +10,6 @@ import constants
 def async_retry_on_exc(retries: int = 3, delay: float = 0.2) -> Callable[..., Any]:
     def decorator(func: Callable[..., Any]):
         async def wrapper(*args, **kwargs):
-            print("Loool")
             for retry_num in range(retries):
                 try:
                     return await func(*args, **kwargs)
